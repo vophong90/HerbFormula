@@ -1441,7 +1441,14 @@ Hãy chỉ trích ra **tên vị thuốc gốc** (không kèm mô tả), đúng 
   const herbList = [...new Set(cleanedHerbs)];
 
   // ✨ Bước 2: Tiếp tục prompt chính như cũ
-  const herbalDataStr = JSON.stringify(window.herbalData || []);
+  const herbalDataStr = JSON.stringify(
+  (window.herbalData || []).map(h => ({
+    herb: h.name_vn,
+    sd_dose: h.sd_dose
+  })),
+  null,
+  2
+);
   const symptomList = symptoms
     .sort((a, b) => b.vas - a.vas)
     .map(s => `– ${s.symptom} (VAS: ${s.vas})`)
@@ -1534,7 +1541,14 @@ Hãy chỉ liệt kê lại **tên vị thuốc gốc** (không kèm mô tả), 
   }
 
   // 🧠 BƯỚC 2: Gọi GPT phân tích tác dụng phụ và gợi ý bồi bổ
-  const herbalListStr = JSON.stringify(window.herbalData || []);
+  const herbalDataStr = JSON.stringify(
+  (window.herbalData || []).map(h => ({
+    herb: h.name_vn,
+    sd_dose: h.sd_dose
+  })),
+  null,
+  2
+);
   const doiDuocStr = JSON.stringify(window.doiDuocData || []);
   const organEffectsStr = JSON.stringify(window.organEffects || []);
   const strengherbStr = JSON.stringify(window.strengherb || []);
@@ -1603,7 +1617,14 @@ async function suggestSecondaryPrevention() {
     .map(s => `– ${s.symptom} (VAS: ${s.vas})`)
     .join("\n");
 
-  const herbalListStr = JSON.stringify(window.herbalData || []);
+  const herbalDataStr = JSON.stringify(
+  (window.herbalData || []).map(h => ({
+    herb: h.name_vn,
+    sd_dose: h.sd_dose
+  })),
+  null,
+  2
+);
   const doiDuocStr = JSON.stringify(window.doiDuocData || []);
   const organEffectsStr = JSON.stringify(window.organEffects || []);
   const strengherbStr = JSON.stringify(window.strengherb || []);
