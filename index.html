@@ -901,7 +901,7 @@ Bạn là một bác sĩ Y học cổ truyền. Dựa vào các triệu chứng 
 
 ${vietSymptoms.map((s, i) => `${i + 1}. ${s}`).join("\n")}
 
-Hãy liệt kê tối đa 5 hội chứng Y học cổ truyền phù hợp nhất, theo thứ tự ưu tiên, kèm mô tả ngắn cho từng hội chứng tại sao phù hợp với triệu chứng trên. Chỉ trả lời theo định dạng:
+Hãy liệt kê tối đa 5 hội chứng Y học cổ truyền phù hợp nhất, theo thứ tự ưu tiên, kèm mô tả ngắn cho từng hội chứng tại sao phù hợp với triệu chứng trên. Chú ý dùng thuật ngữ chuyên ngành Trung y, ưu tiên giữ các thuật ngữ Hán Việt. Chỉ trả lời theo định dạng:
 
 1. [Tên hội chứng] – [Giải thích ngắn]
 2. ...
@@ -1155,7 +1155,7 @@ Hãy gợi ý một bài thuốc cổ phương phù hợp nhất với hội ch�
 🔸 **Cách dùng:**  
 🔸 **Lưu ý khi sử dụng (nếu có):**  
 
-Chỉ chọn một bài thuốc cổ phương duy nhất, lý giải ngắn gọn vì sao phù hợp nếu cần.
+Chỉ chọn một bài thuốc cổ phương duy nhất, lý giải ngắn gọn vì sao phù hợp nếu cần. Chú ý dùng thuật ngữ chuyên ngành Trung y, ưu tiên giữ các thuật ngữ Hán Việt
 `;
 
 const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
@@ -1250,7 +1250,7 @@ Bạn là chuyên gia Y học cổ truyền. Cho biết hội chứng sau:
 Hãy liệt kê:
 1. Các nguyên nhân và cơ chế bệnh sinh chính theo lý luận Trung y.
 2. Mỗi cơ chế/nhân tố hãy gợi ý 1–2 pháp trị chính xác để điều trị nguyên nhân đó.
-3. Mỗi pháp trị hãy đưa ra các từ khóa liên quan (bổ tỳ, kiện vận, hành khí, lý khí, hoạt huyết, thanh thấp, tiêu đàm...).
+3. Mỗi pháp trị hãy đưa ra 3-5 từ khóa liên quan (bổ tỳ, kiện vận, hành khí, lý khí, hoạt huyết, thanh thấp, tiêu đàm...).
 
 Định dạng mỗi mục như sau:
 - Nguyên nhân: [tên nguyên nhân/cơ chế]
@@ -1338,72 +1338,54 @@ Hãy liệt kê:
 
 async function suggestSymptomHerbsByGPT() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
-
   const syndrome = data.steps?.step3?.final?.trim();
   const symptoms = data.steps?.step2?.symptoms || [];
 
-  if (!syndrome || symptoms.length === 0) {
-    alert("⚠️ Thiếu hội chứng hoặc triệu chứng để phân tích.");
+  if (!symptoms.length) {
+    alert("⚠️ Chưa có dữ liệu triệu chứng.");
     return;
   }
 
   const outputBox = document.getElementById("sixs-symptom");
   if (outputBox) outputBox.value = "⏳ Đang phân tích, vui lòng chờ...";
 
-  const topSymptoms = [...symptoms]
+  // Load dữ liệu nội bộ
+  let organEffects = Array.isArray(window.organEffects)
+    ? window.organEffects
+    : typeof window.organEffects === "string"
+    ? JSON.parse(window.organEffects)
+    : [];
+
+  let strengherb = Array.isArray(window.strengherb)
+    ? window.strengherb
+    : typeof window.strengherb === "string"
+    ? JSON.parse(window.strengherb)
+    : [];
+
+  let doiDuoc = Array.isArray(window.doiDuocData)
+    ? window.doiDuocData
+    : typeof window.doiDuocData === "string"
+    ? JSON.parse(window.doiDuocData)
+    : [];
+
+  // Tạo prompt GPT
+  const symptomList = symptoms
     .sort((a, b) => b.vas - a.vas)
-    .slice(0, 5)
-    .map(s => `– ${s.symptom} (VAS ${s.vas})`)
+    .map(s => `- ${s.symptom} (VAS ${s.vas})`)
     .join("\n");
 
-let organEffects = window.organEffects;
-if (typeof organEffects === "string") {
-  try {
-    organEffects = JSON.parse(organEffects);
-  } catch (e) {
-    organEffects = [];
-  }
-}
-if (!Array.isArray(organEffects)) organEffects = [];
-
-let strengherb = window.strengherb;
-if (typeof strengherb === "string") {
-  try {
-    strengherb = JSON.parse(strengherb);
-  } catch (e) {
-    strengherb = [];
-  }
-}
-if (!Array.isArray(strengherb)) strengherb = [];
-
-let doiDuoc = window.doiDuocData;
-if (typeof doiDuoc === "string") {
-  try {
-    doiDuoc = JSON.parse(doiDuoc);
-  } catch (e) {
-    doiDuoc = [];
-  }
-}
-if (!Array.isArray(doiDuoc)) doiDuoc = [];
-
-  // Gửi prompt cho GPT để phân tích cơ chế và từ khóa
   const prompt = `
-Bạn là chuyên gia Y học cổ truyền. Tôi cung cấp:
+Bạn là chuyên gia Y học cổ truyền.
 
-🔸 Hội chứng YHCT: ${syndrome}
+Tôi cung cấp danh sách triệu chứng như sau:
+${symptomList}
 
-🔸 Danh sách triệu chứng nổi bật:
-${topSymptoms}
+Hãy liệt kê cho mỗi triệu chứng một danh sách các từ khóa đồng nghĩa bằng tiếng thuần Việt và Hán Việt. Từ khóa phải gắn sát với triệu chứng, dùng trong chẩn đoán hoặc pháp trị.
 
-Yêu cầu:
-1. Phân tích nguyên nhân/cơ chế sinh ra các triệu chứng trên.
-2. Với mỗi nhóm triệu chứng chính hoặc cơ chế, liệt kê pháp trị phù hợp.
-3. Với mỗi pháp trị, đưa ra từ khóa tương ứng (ví dụ: hành khí, kiện tỳ, hoạt huyết...).
-
-Trả về theo định dạng:
-- [Triệu chứng hoặc Cơ chế]: mô tả
-  - Pháp trị: ...
-  - Từ khóa: ..., ..., ...
+Định dạng:
+Triệu chứng: ..., ..., ...
+Ví dụ:
+Đau đầu: đầu thống, thống đầu, đầu đau
 `;
 
   const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
@@ -1420,60 +1402,52 @@ Trả về theo định dạng:
     return;
   }
 
-  const lines = reply.split("\n").map(l => l.trim()).filter(l => l);
-  const keywordMap = new Map(); // Map<triệu chứng/cơ chế, Set<từ khóa>>
-  let currentSymptomGroup = "";
+  // Xử lý kết quả từ GPT
+  const keywordMap = new Map(); // symptom -> [keyword1, keyword2, ...]
+  const lines = reply.split("\n").map(l => l.trim()).filter(l => l.includes(":"));
 
-  for (const line of lines) {
-    if (line.startsWith("-") && !line.includes("Từ khóa")) {
-      currentSymptomGroup = line.replace(/^-/, "").split(":")[0].trim();
-    } else if (line.startsWith("- Từ khóa:") && currentSymptomGroup) {
-      const keywords = line
-        .replace("- Từ khóa:", "")
-        .split(",")
-        .map(k => k.trim())
-        .filter(k => k);
-      keywordMap.set(currentSymptomGroup, new Set(keywords));
+  lines.forEach(line => {
+    const [symptom, keywordsStr] = line.split(":").map(s => s.trim());
+    const keywords = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
+    if (symptom && keywords.length) {
+      keywordMap.set(symptom, keywords);
     }
-  }
+  });
 
   const resultLines = [];
 
-  for (const [groupLabel, keywords] of keywordMap.entries()) {
+  for (const [symptomLabel, keywords] of keywordMap.entries()) {
+    const vasValue = symptoms.find(s => symptomLabel.includes(s.symptom))?.vas || 50;
     const herbsSet = new Set();
 
     keywords.forEach(keyword => {
-      // Tra bảng tạng phủ
+      // Tra organEffects
       organEffects.forEach(item => {
         if ((item.effect || "").includes(keyword)) {
           herbsSet.add(item.herb);
         }
       });
 
-      // Tra bảng tác dụng mạnh
+      // Tra strengherb
       strengherb.forEach(item => {
         if ((item.action || "").includes(keyword)) {
           herbsSet.add(item.herb);
         }
       });
 
-      // Tra đối dược – lấy cả bộ nếu từ khóa trùng
+      // Tra doiDuoc
       doiDuoc.forEach(group => {
-        const match = group.group?.some(g =>
+        const groupMatch = group.group?.some(g =>
           Object.values(g).some(val => (val || "").includes(keyword))
         );
-        if (match) {
+        if (groupMatch) {
           group.group?.forEach(g => herbsSet.add(g.name));
         }
       });
     });
 
+    // Chọn vị thuốc có score gần với VAS
     const allHerbs = Array.from(herbsSet);
-
-    // Ưu tiên theo độ lệch giữa score và VAS triệu chứng
-    const matchSymptom = symptoms.find(s => groupLabel.includes(s.symptom));
-    const vasValue = matchSymptom?.vas || 50;
-
     const herbsWithScore = allHerbs.map(h => {
       const item = strengherb.find(x => x.herb === h);
       const score = item?.score ?? null;
@@ -1481,14 +1455,16 @@ Trả về theo định dạng:
       return { herb: h, score, diff };
     });
 
-    const sorted = herbsWithScore.sort((a, b) => a.diff - b.diff);
-    const selected = sorted.slice(0, 3).map(x => x.herb);
+    const selected = herbsWithScore
+      .sort((a, b) => a.diff - b.diff)
+      .slice(0, 3)
+      .map(h => h.herb);
 
-    resultLines.push(`${groupLabel}: ${selected.join(", ")}`);
+    resultLines.push(`${symptomLabel}: ${selected.join(", ")}`);
   }
 
   if (outputBox) outputBox.value = resultLines.join("\n");
-  alert("✅ Đã gợi ý vị thuốc theo triệu chứng.");
+  alert("✅ Đã gợi ý vị thuốc theo triệu chứng và mức độ VAS.");
 }
 
 async function suggestSiteHerbsByGPT() {
