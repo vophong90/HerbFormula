@@ -1222,7 +1222,7 @@ async function suggestSourceHerbsByGPT() {
   const prompt = `
 Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách pháp trị được phép sử dụng:
 
-${window.treatmentTerms.join(", ")}
+${treatmentListText}
 
 Hãy đọc kỹ danh sách này. Chỉ được chọn từ danh sách này, không được tạo pháp trị mới, không viết linh tinh.
 
@@ -1237,12 +1237,14 @@ Hãy trả lời đúng định dạng sau:
 Không thêm vị thuốc, không viết "Từ khóa", không giải thích.
 ⚠️ Nếu bạn viết sai định dạng hoặc tự tạo pháp trị ngoài danh sách, bạn sẽ bị đánh giá là sai.
 `;
-try {
- const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });  
+
+  try {
+    const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+
     const result = await res.json();
     const reply = result.choices?.[0]?.message?.content || "";
 
@@ -1258,28 +1260,38 @@ try {
       .map(s => s.trim())
       .filter(s => allTreatments.includes(s));
 
-    const uniqueHerbs = new Set();
+    // Tạo object chứa mỗi pháp trị và danh sách tối đa 3 vị thuốc
+    const resultByEffect = {};
 
-    // Duyệt các pháp trị, tìm vị thuốc từ 2 nguồn
     for (const effect of effectList) {
+      const herbSet = new Set();
+
       // 1. Từ organEffects
       for (const organ in window.organEffects) {
         const herbs = window.organEffects[organ]?.[effect];
         if (Array.isArray(herbs)) {
-          herbs.forEach(h => uniqueHerbs.add(h));
+          herbs.forEach(h => herbSet.add(h));
         }
       }
 
       // 2. Từ herbsByEffect
       const herbs = window.herbsByEffect?.[effect];
       if (Array.isArray(herbs)) {
-        herbs.forEach(h => uniqueHerbs.add(h.vietnamese));
+        herbs.forEach(h => herbSet.add(h.vietnamese));
       }
+
+      // Chỉ lấy tối đa 3 vị thuốc đầu tiên
+      resultByEffect[effect] = Array.from(herbSet).slice(0, 3);
     }
 
-    // Xuất ra textarea
-    const resultText = Array.from(uniqueHerbs).join(", ");
-    outputBox.value = resultText || "❌ Không tìm thấy vị thuốc phù hợp với các pháp trị.";
+    // Biến kết quả thành chuỗi hiển thị
+    const outputLines = Object.entries(resultByEffect).map(([effect, herbs]) => {
+      return `${effect}: ${herbs.join(", ")}`;
+    });
+
+    outputBox.value = outputLines.length
+      ? outputLines.join("\n")
+      : "❌ Không tìm thấy vị thuốc phù hợp với các pháp trị.";
   } catch (error) {
     outputBox.value = `❌ Lỗi GPT: ${error.message}`;
   }
