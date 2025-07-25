@@ -1213,8 +1213,8 @@ async function suggestSourceHerbsByGPT() {
   if (outputBox) outputBox.value = "⏳ Đang truy vấn GPT, vui lòng chờ...";
 
   // Danh sách pháp trị chuẩn
-  const allTreatments = Array.isArray(window.therapeuticTerms)
-    ? window.therapeuticTerms
+  const allTreatments = Array.isArray(window.treatmentTerms)
+    ? window.treatmentTerms
     : [];
 
   const treatmentListText = allTreatments.join(", ");
