@@ -1308,7 +1308,10 @@ Hãy liệt kê:
 
     resultLines.push(`${cause}: ${selected.join(", ")}`);
   }
-
+console.log("✅ GPT raw:", reply);
+console.log("✅ keywordMap size:", keywordMap.size);
+console.log("✅ Các pháp trị:", [...keywordMap.keys()]);
+console.log("✅ Kết quả gộp:", resultLines.join("\n"));
   if (sourceBox) sourceBox.value = resultLines.join("\n");
   alert("✅ Đã gợi ý vị thuốc theo nguyên nhân/cơ chế.");
 }
@@ -1830,22 +1833,23 @@ Không kèm phân tích dài dòng.
     const [herb, doseRaw] = line.split(":").map(p => p.trim());
     if (!herb) continue;
 
-    // Tách số gam từ chuỗi, lấy giá trị cao nhất có thể
+    // Tìm tất cả số trong chuỗi (g, gam)
     const numbers = (doseRaw.match(/\d+/g) || []).map(Number);
     const maxDose = numbers.length > 0 ? Math.max(...numbers) : 0;
 
+    // Nếu đã có, lấy liều cao hơn
     if (!herbMap.has(herb)) {
-      herbMap.set(herb, { text: doseRaw, max: maxDose });
+      herbMap.set(herb, maxDose);
     } else {
-      const old = herbMap.get(herb);
-      if (maxDose > old.max) {
-        herbMap.set(herb, { text: doseRaw, max: maxDose });
+      const existing = herbMap.get(herb);
+      if (maxDose > existing) {
+        herbMap.set(herb, maxDose);
       }
     }
   }
 
   const finalFormula = Array.from(herbMap.entries())
-    .map(([herb, obj]) => `${herb}: ${obj.text}`)
+    .map(([herb, dose]) => `${herb} ${dose}g`)
     .join(", ");
 
   const outputBox = document.getElementById("final-gpt-formula");
