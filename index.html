@@ -11,6 +11,7 @@
   <script src="doi_duoc_data.js"></script>
   <script src="organ_effects.js"></script>
   <script src="strengherb.js"></script>
+  <script src="treatment_terms.js"></script>
 
 </head>
 <body class="bg-gray-50 text-gray-800">
@@ -1204,116 +1205,95 @@ async function suggestSourceHerbsByGPT() {
   const syndrome = data.steps?.step3?.final?.trim();
 
   if (!syndrome) {
-    alert("⚠️ Chưa có hội chứng YHCT để gợi ý.");
+    alert("⚠️ Chưa có hội chứng YHCT ở bước 3.");
     return;
   }
 
-  const sourceBox = document.getElementById("sixs-source");
-  if (sourceBox) sourceBox.value = "⏳ Đang phân tích, vui lòng chờ...";
+  const outputBox = document.getElementById("sixs-source");
+  if (outputBox) outputBox.value = "⏳ Đang truy vấn GPT, vui lòng chờ...";
 
-  // Load dữ liệu nội bộ
-  let organEffects = typeof window.organEffects === "string"
-    ? JSON.parse(window.organEffects)
-    : window.organEffects || {};
-
-  let herbsByEffect = typeof window.herbsByEffect === "string"
-    ? JSON.parse(window.herbsByEffect)
-    : window.herbsByEffect || {};
-
-  let doiDuoc = Array.isArray(window.doiDuocData)
-    ? window.doiDuocData
-    : typeof window.doiDuocData === "string"
-    ? JSON.parse(window.doiDuocData)
+  // Danh sách pháp trị chuẩn
+  const allTreatments = Array.isArray(window.therapeuticTerms)
+    ? window.therapeuticTerms
     : [];
 
-  // Giai đoạn 1: GPT phân tích nguyên nhân – pháp trị – từ khóa
+  const treatmentListText = allTreatments.join(", ");
+
   const prompt = `
-Bạn là chuyên gia Y học cổ truyền. Cho biết hội chứng sau:
+Bạn là chuyên gia Y học cổ truyền.
 
-🔸 Hội chứng YHCT: ${syndrome}
+Hội chứng YHCT: ${syndrome}
 
-Hãy liệt kê:
-1. Các nguyên nhân và cơ chế bệnh sinh chính theo lý luận Trung y.
-2. Mỗi cơ chế/nhân tố hãy gợi ý 1–2 pháp trị chính xác để điều trị nguyên nhân đó.
-3. Mỗi pháp trị hãy đưa ra 3-5 từ khóa liên quan (bổ tỳ, kiện vận, hành khí, lý khí, hoạt huyết, thanh thấp, tiêu đàm...).
+Dưới đây là danh sách pháp trị chuẩn (chỉ được chọn trong danh sách này, không được thêm ngoài danh sách):
 
-Định dạng mỗi mục như sau:
-- Hành khí: lý khí, hành khí, sơ khí,...
-- Hoạt huyết: hoạt huyết, khử ứ, tiêu ứ,...
+${treatmentListText}
+
+Hãy cho biết:
++ Nguyên nhân: ...
++ Cơ chế bệnh sinh: ...
++ Pháp trị: chọn 3–7 pháp trị phù hợp với hội chứng trên, chỉ được chọn từ danh sách đã cho, viết trên một dòng, ngăn cách bằng dấu phẩy.
+
+Trả lời đúng định dạng:
++ Nguyên nhân: ...
++ Cơ chế bệnh sinh: ...
++ Pháp trị: pháp trị 1, pháp trị 2, pháp trị 3, ...
+Không cần giải thích thêm.
 `;
 
-  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-
-  const result = await res.json();
-  const reply = result.choices?.[0]?.message?.content || "";
-
-  if (!reply) {
-    alert("❌ GPT không trả kết quả.");
-    return;
-  }
-
-  // Giai đoạn 2: Tách nguyên nhân và từ khóa
-  const lines = reply.split("\n").map(l => l.trim()).filter(l => l.includes(":"));
-  const keywordMap = new Map(); // Map<Pháp trị, Set<Từ khóa>>
-
-  for (const line of lines) {
-    const [cause, keywordsStr] = line.split(":").map(s => s.trim());
-    const keywords = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
-    if (cause && keywords.length) {
-      keywordMap.set(cause, new Set(keywords));
-    }
-  }
-
-  // Giai đoạn 3: Tra các bảng để lấy vị thuốc phù hợp
-  const resultLines = [];
-
-  for (const [cause, keywords] of keywordMap.entries()) {
-    const herbsSet = new Set();
-
-    keywords.forEach(keyword => {
-      // 🔍 organEffects
-      Object.entries(organEffects).forEach(([organ, effectMap]) => {
-        Object.entries(effectMap).forEach(([effect, herbs]) => {
-          if (effect.includes(keyword)) {
-            herbs.forEach(h => herbsSet.add(h));
-          }
-        });
-      });
-
-      // 🔍 herbsByEffect
-      Object.entries(herbsByEffect).forEach(([effect, herbs]) => {
-        if (effect.includes(keyword)) {
-          herbs.forEach(h => herbsSet.add(h.vietnamese));
-        }
-      });
-
-      // 🔍 doiDuoc
-      doiDuoc.forEach(item => {
-        if ((item.doiduoc || "").includes(keyword) || (item.chutri || "").includes(keyword)) {
-          const herbs = (item.doiduoc || "").split(/\s*[-–]\s*/).map(h => h.trim());
-          herbs.forEach(h => herbsSet.add(h));
-        }
-      });
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${window.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model: "gpt-4o",
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.3,
+      }),
     });
 
-    // Lấy tối đa 3 vị ngẫu nhiên
-    const allHerbs = Array.from(herbsSet);
-    const selected = allHerbs.length > 3
-      ? allHerbs.sort(() => 0.5 - Math.random()).slice(0, 3)
-      : allHerbs;
+    const result = await res.json();
+    const reply = result.choices?.[0]?.message?.content || "";
 
-    resultLines.push(`${cause}: ${selected.join(", ")}`);
+    // Trích xuất dòng pháp trị
+    const line = reply.split("\n").find(l => l.toLowerCase().includes("pháp trị"));
+    if (!line) {
+      outputBox.value = "❌ Không trích xuất được pháp trị từ GPT.";
+      return;
+    }
+
+    const effectList = line.split(":")[1]
+      .split(",")
+      .map(s => s.trim())
+      .filter(s => allTreatments.includes(s));
+
+    const uniqueHerbs = new Set();
+
+    // Duyệt các pháp trị, tìm vị thuốc từ 2 nguồn
+    for (const effect of effectList) {
+      // 1. Từ organEffects
+      for (const organ in window.organEffects) {
+        const herbs = window.organEffects[organ]?.[effect];
+        if (Array.isArray(herbs)) {
+          herbs.forEach(h => uniqueHerbs.add(h));
+        }
+      }
+
+      // 2. Từ herbsByEffect
+      const herbs = window.herbsByEffect?.[effect];
+      if (Array.isArray(herbs)) {
+        herbs.forEach(h => uniqueHerbs.add(h.vietnamese));
+      }
+    }
+
+    // Xuất ra textarea
+    const resultText = Array.from(uniqueHerbs).join(", ");
+    outputBox.value = resultText || "❌ Không tìm thấy vị thuốc phù hợp với các pháp trị.";
+  } catch (error) {
+    outputBox.value = `❌ Lỗi GPT: ${error.message}`;
   }
-console.log("✅ GPT raw:", reply);
-console.log("✅ keywordMap size:", keywordMap.size);
-console.log("✅ Các pháp trị:", [...keywordMap.keys()]);
-console.log("✅ Kết quả gộp:", resultLines.join("\n"));
-  if (sourceBox) sourceBox.value = resultLines.join("\n");
-  alert("✅ Đã gợi ý vị thuốc theo nguyên nhân/cơ chế.");
 }
   
 async function suggestSymptomHerbsByGPT() {
