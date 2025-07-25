@@ -1253,9 +1253,8 @@ Hãy liệt kê:
 3. Mỗi pháp trị hãy đưa ra 3-5 từ khóa liên quan (bổ tỳ, kiện vận, hành khí, lý khí, hoạt huyết, thanh thấp, tiêu đàm...).
 
 Định dạng mỗi mục như sau:
-- Nguyên nhân: [tên nguyên nhân/cơ chế]
-  - Pháp trị: ...
-  - Từ khóa: ..., ..., ...
+- Hành khí: lý khí, hành khí, sơ khí,...
+- Hoạt huyết: hoạt huyết, khử ứ, tiêu ứ,...
 `;
 
   const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
@@ -1374,18 +1373,22 @@ async function suggestSymptomHerbsByGPT() {
     .map(s => `- ${s.symptom} (VAS ${s.vas})`)
     .join("\n");
 
-  const prompt = `
+ const prompt = `
 Bạn là chuyên gia Y học cổ truyền.
 
-Tôi cung cấp danh sách triệu chứng như sau:
+Dưới đây là danh sách triệu chứng người bệnh đang có:
 ${symptomList}
 
-Hãy liệt kê cho mỗi triệu chứng một danh sách các từ khóa đồng nghĩa bằng tiếng thuần Việt và Hán Việt. Từ khóa phải gắn sát với triệu chứng, dùng trong chẩn đoán hoặc pháp trị.
+Yêu cầu: Với mỗi triệu chứng, hãy liệt kê:
+1. Các từ khóa đồng nghĩa hoặc tương đương bằng **tiếng thuần Việt** (ví dụ: đau đầu, tức ngực, nặng bụng...)
+2. Các từ khóa tương đương bằng **tiếng Hán Việt** (ví dụ: đầu thống, hung mãn, phúc trướng...)
 
-Định dạng:
-Triệu chứng: ..., ..., ...
-Ví dụ:
-Đau đầu: đầu thống, thống đầu, đầu đau
+⚠️ Mỗi mục **phải có ít nhất 2–3 từ khóa**, không được để trống dòng.
+
+Trả về theo định dạng giống ví dụ dưới đây:
+
+🔹 Đau đầu: đau đầu, đầu thống,..
+🔹 Đau lưng: đau lưng, yêu thống,...
 `;
 
   const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
