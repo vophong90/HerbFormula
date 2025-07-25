@@ -1211,37 +1211,22 @@ async function suggestSourceHerbsByGPT() {
   const sourceBox = document.getElementById("sixs-source");
   if (sourceBox) sourceBox.value = "⏳ Đang phân tích, vui lòng chờ...";
 
-let organEffects = window.organEffects;
-if (typeof organEffects === "string") {
-  try {
-    organEffects = JSON.parse(organEffects);
-  } catch (e) {
-    organEffects = [];
-  }
-}
-if (!Array.isArray(organEffects)) organEffects = [];
+  // Load dữ liệu nội bộ
+  let organEffects = typeof window.organEffects === "string"
+    ? JSON.parse(window.organEffects)
+    : window.organEffects || {};
 
-let strengherb = window.strengherb;
-if (typeof strengherb === "string") {
-  try {
-    strengherb = JSON.parse(strengherb);
-  } catch (e) {
-    strengherb = [];
-  }
-}
-if (!Array.isArray(strengherb)) strengherb = [];
+  let herbsByEffect = typeof window.herbsByEffect === "string"
+    ? JSON.parse(window.herbsByEffect)
+    : window.herbsByEffect || {};
 
-let doiDuoc = window.doiDuocData;
-if (typeof doiDuoc === "string") {
-  try {
-    doiDuoc = JSON.parse(doiDuoc);
-  } catch (e) {
-    doiDuoc = [];
-  }
-}
-if (!Array.isArray(doiDuoc)) doiDuoc = [];
+  let doiDuoc = Array.isArray(window.doiDuocData)
+    ? window.doiDuocData
+    : typeof window.doiDuocData === "string"
+    ? JSON.parse(window.doiDuocData)
+    : [];
 
-  // Giai đoạn 1: GPT phân tích nguyên nhân, pháp trị, từ khóa
+  // Giai đoạn 1: GPT phân tích nguyên nhân – pháp trị – từ khóa
   const prompt = `
 Bạn là chuyên gia Y học cổ truyền. Cho biết hội chứng sau:
 
@@ -1271,58 +1256,51 @@ Hãy liệt kê:
     return;
   }
 
-  // Giai đoạn 2: tách nguyên nhân và từ khóa
-  const lines = reply.split("\n").map(l => l.trim()).filter(l => l);
-  const keywordMap = new Map(); // Map<Nguyên nhân, Set<Từ khóa>>
-
-  let currentCause = "";
+  // Giai đoạn 2: Tách nguyên nhân và từ khóa
+  const lines = reply.split("\n").map(l => l.trim()).filter(l => l.includes(":"));
+  const keywordMap = new Map(); // Map<Pháp trị, Set<Từ khóa>>
 
   for (const line of lines) {
-    if (line.startsWith("- Nguyên nhân:")) {
-      currentCause = line.replace("- Nguyên nhân:", "").trim();
-    } else if (line.startsWith("- Từ khóa:") && currentCause) {
-      const keywords = line
-        .replace("- Từ khóa:", "")
-        .split(",")
-        .map(k => k.trim())
-        .filter(k => k);
-      keywordMap.set(currentCause, new Set(keywords));
+    const [cause, keywordsStr] = line.split(":").map(s => s.trim());
+    const keywords = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
+    if (cause && keywords.length) {
+      keywordMap.set(cause, new Set(keywords));
     }
   }
 
-  // Giai đoạn 3: tra các bảng để lấy vị thuốc phù hợp
+  // Giai đoạn 3: Tra các bảng để lấy vị thuốc phù hợp
   const resultLines = [];
 
   for (const [cause, keywords] of keywordMap.entries()) {
     const herbsSet = new Set();
 
     keywords.forEach(keyword => {
-      // Tra organEffects
-      organEffects.forEach(item => {
-        if ((item.effect || "").includes(keyword)) {
-          herbsSet.add(item.herb);
+      // 🔍 organEffects
+      Object.entries(organEffects).forEach(([organ, effectMap]) => {
+        Object.entries(effectMap).forEach(([effect, herbs]) => {
+          if (effect.includes(keyword)) {
+            herbs.forEach(h => herbsSet.add(h));
+          }
+        });
+      });
+
+      // 🔍 herbsByEffect
+      Object.entries(herbsByEffect).forEach(([effect, herbs]) => {
+        if (effect.includes(keyword)) {
+          herbs.forEach(h => herbsSet.add(h.vietnamese));
         }
       });
 
-      // Tra strengherb
-      strengherb.forEach(item => {
-        if ((item.action || "").includes(keyword)) {
-          herbsSet.add(item.herb);
-        }
-      });
-
-      // Tra doiDuoc – nếu 1 vị khớp, lấy cả cặp/bộ
-      doiDuoc.forEach(group => {
-        const groupMatch = group.group?.some(g =>
-          Object.values(g).some(val => (val || "").includes(keyword))
-        );
-        if (groupMatch) {
-          group.group?.forEach(g => herbsSet.add(g.name));
+      // 🔍 doiDuoc
+      doiDuoc.forEach(item => {
+        if ((item.doiduoc || "").includes(keyword) || (item.chutri || "").includes(keyword)) {
+          const herbs = (item.doiduoc || "").split(/\s*[-–]\s*/).map(h => h.trim());
+          herbs.forEach(h => herbsSet.add(h));
         }
       });
     });
 
-    // Chọn tối đa 3 vị ngẫu nhiên
+    // Lấy tối đa 3 vị ngẫu nhiên
     const allHerbs = Array.from(herbsSet);
     const selected = allHerbs.length > 3
       ? allHerbs.sort(() => 0.5 - Math.random()).slice(0, 3)
@@ -1334,7 +1312,7 @@ Hãy liệt kê:
   if (sourceBox) sourceBox.value = resultLines.join("\n");
   alert("✅ Đã gợi ý vị thuốc theo nguyên nhân/cơ chế.");
 }
-
+  
 async function suggestSymptomHerbsByGPT() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
   const syndrome = data.steps?.step3?.final?.trim();
@@ -1644,101 +1622,84 @@ Chỉ trả về tên các vị thuốc, cách nhau dấu phẩy, không kèm ph
 
 async function suggestStrengthDoseByGPT() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
-
-  const syndrome = data.steps?.step3?.final?.trim();
   const symptoms = data.steps?.step2?.symptoms || [];
+  const keywordMap = data.steps?.step4?.keywordMap; // keywordMap được lưu từ suggestSymptomHerbsByGPT
+  const outputBox = document.getElementById("sixs-strength");
 
-  const herbsFromSourceRaw = (document.getElementById("sixs-source")?.value || "").split(",").map(h => h.trim()).filter(Boolean);
-  const herbsFromSymptomRaw = (document.getElementById("sixs-symptom")?.value || "").split(",").map(h => h.trim()).filter(Boolean);
-
-  const herbRawList = [...new Set([...herbsFromSourceRaw, ...herbsFromSymptomRaw])];
-
-  if (!syndrome || herbRawList.length === 0 || symptoms.length === 0) {
-    alert("⚠️ Thiếu dữ liệu: hội chứng, triệu chứng hoặc danh sách vị thuốc.");
+  if (!keywordMap || !symptoms.length) {
+    alert("⚠️ Chưa có dữ liệu keyword hoặc VAS.");
     return;
   }
 
-  const outputBox = document.getElementById("sixs-strength");
-  if (outputBox) outputBox.value = "⏳ Đang xử lý, vui lòng chờ...";
+  if (outputBox) outputBox.value = "⏳ Đang phân tích liều lượng...";
 
-  // ✨ Bước 1: GPT lọc danh sách tên vị thuốc
-  const herbCleaningPrompt = `
-Dưới đây là danh sách vị thuốc, mỗi dòng có thể gồm tên và mô tả:
+  // Load herbalData
+  const herbList = Array.isArray(window.herbalData)
+    ? window.herbalData
+    : typeof window.herbalData === "string"
+    ? JSON.parse(window.herbalData)
+    : [];
 
-${herbRawList.join("\n")}
+  // Map<herb → VAS>
+  const herbVASMap = new Map();
 
-Hãy chỉ trích ra **tên vị thuốc gốc** (không kèm mô tả), đúng chính tả, không trùng lặp, cách nhau dấu phẩy, không kèm phân tích.
-`;
+  for (const [symptomLabel, keywords] of Object.entries(keywordMap)) {
+    const vas = symptoms.find(s => symptomLabel.includes(s.symptom))?.vas || 5;
 
-  const cleanRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: herbCleaningPrompt })
-  });
+    keywords.forEach(keyword => {
+      // Danh sách vị thuốc từ suggestSymptomHerbsByGPT đã có rồi
+      const matchedHerbs = data.steps?.step4?.symptomHerbs?.[symptomLabel] || [];
 
-  const cleanResult = await cleanRes.json();
-  const cleanedHerbs = cleanResult.choices?.[0]?.message?.content
-    ?.split("\n")
-    .map(line => line.trim())
-    .filter(Boolean) || [];
+      matchedHerbs.forEach(h => {
+        const prev = herbVASMap.get(h) || 0;
+        if (vas > prev) herbVASMap.set(h, vas);
+      });
+    });
+  }
 
-  const herbList = [...new Set(cleanedHerbs)];
+  // Hàm lấy sd_dose từ herbalData hoặc GPT
+  async function getStandardDose(herbName) {
+    const found = herbList.find(h => h.herb === herbName);
+    if (found && found.sd_dose) return found.sd_dose;
 
-  // ✨ Bước 2: Tiếp tục prompt chính như cũ
-  const herbalDataStr = JSON.stringify(
-  (window.herbalData || []).map(h => ({
-    herb: h.name_vn,
-    sd_dose: h.sd_dose
-  })),
-  null,
-  2
-);
-  const symptomList = symptoms
-    .sort((a, b) => b.vas - a.vas)
-    .map(s => `– ${s.symptom} (VAS: ${s.vas})`)
-    .join("\n");
+    // GPT fallback nếu không có sd_dose
+    const gptPrompt = `Bạn là chuyên gia Y học cổ truyền. Liều dùng trung bình mỗi ngày (gam) của vị thuốc "${herbName}" là bao nhiêu? Trả lời duy nhất một con số (g), không thêm chú thích.`;
 
-  const mainPrompt = `
-Bạn là bác sĩ Y học cổ truyền. Dưới đây là thông tin lâm sàng:
+    try {
+      const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: gptPrompt })
+      });
 
-🔸 Hội chứng YHCT: ${syndrome}
-🔸 Các triệu chứng và mức độ VAS:
-${symptomList}
+      const result = await res.json();
+      const text = result.choices?.[0]?.message?.content || "";
+      const match = text.match(/(\d+([.,]\d+)?)/);
+      if (match) return parseFloat(match[1].replace(",", "."));
+    } catch (e) {
+      console.warn(`GPT không trả lời liều cho ${herbName}`, e);
+    }
 
-🔹 Danh sách vị thuốc đã chọn từ bước Source và Symptom:
-${herbList.join(", ")}
+    return 8; // fallback nếu GPT cũng không trả về
+  }
 
-🔹 Bảng dữ liệu vị thuốc có định lượng (herbal_list):
-${herbalDataStr}
+  const resultLines = [];
 
-Yêu cầu:
-– Với từng vị thuốc trong danh sách đã chọn, hãy tìm **vị thuốc tương ứng trong herbal_list**.  
-– Với mỗi vị thuốc:
-  • Lấy thông tin sd_dose  
-  • Dựa vào triệu chứng liên quan (ưu tiên VAS cao nhất)  
-  • Gợi ý liều lượng theo quy tắc:  
-    – VAS < 4 → sd_dose  
-    – VAS 4–6 → 1.5 × sd_dose  
-    – VAS 6–8 → 2 × sd_dose  
-    – VAS ≥ 8 → 3 × sd_dose  
-– Chỉ trả về danh sách theo định dạng:
+  for (const [herb, vas] of herbVASMap.entries()) {
+    const sd_dose = await getStandardDose(herb);
+    let dose = sd_dose;
 
-[vị thuốc]: [liều dùng đề xuất]g
+    if (vas >= 8) dose = sd_dose * 3;
+    else if (vas >= 6) dose = sd_dose * 2;
+    else if (vas >= 4) dose = sd_dose * 1.5;
+    else dose = sd_dose;
 
-Các vị thuốc cách nhau dấu phẩy, không kèm phân tích.
-`;
+    dose = Math.round(dose * 10) / 10;
+    resultLines.push(`${herb}: ${dose}g (VAS ${vas})`);
+  }
 
-  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: mainPrompt })
-  });
-
-  const result = await res.json();
-  const reply = result.choices?.[0]?.message?.content || "";
-
-  if (outputBox) outputBox.value = reply;
-  alert("✅ Đã gợi ý xong liều lượng Strength.");
+  if (outputBox) outputBox.value = resultLines.join("\n");
+  alert("✅ Đã gợi ý liều lượng theo mức độ triệu chứng.");
 }
 
 async function suggestSideEffectModifiers() {
