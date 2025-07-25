@@ -1460,9 +1460,11 @@ Ví dụ:
       .slice(0, 3)
       .map(h => h.herb);
 
-    resultLines.push(`${symptomLabel}: ${selected.join(", ")}`);
-  }
-
+    if (selected.length === 0) {
+  resultLines.push(`${cause}: (Không tìm thấy vị thuốc phù hợp với từ khóa)`);
+} else {
+  resultLines.push(`${cause}: ${selected.join(", ")}`);
+}
   if (outputBox) outputBox.value = resultLines.join("\n");
   alert("✅ Đã gợi ý vị thuốc theo triệu chứng và mức độ VAS.");
 }
