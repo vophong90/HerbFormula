@@ -534,18 +534,13 @@ Hãy tách ra danh sách các triệu chứng cụ thể, mỗi dòng ghi 1 tri�
 2. [triệu chứng 2]
 ...`;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2
-    })
-  });
+  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
@@ -911,18 +906,13 @@ Hãy liệt kê tối đa 5 hội chứng Y học cổ truyền phù hợp nhấ
 2. ...
   `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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", // 👈 đổi thành API thật
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.5
-    })
-  });
+  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "❌ GPT không trả về kết quả.";
@@ -1010,18 +1000,13 @@ ${rawSymptoms}
 ${extraText}`; // 👈 Gộp phần bổ sung
 
   // 4. Gửi GPT
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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", // 🔁 Thay bằng khóa thật của bạn
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: basePrompt }],
-      temperature: 0.3
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "Không nhận được phản hồi từ GPT.";
@@ -1172,18 +1157,13 @@ Hãy gợi ý một bài thuốc cổ phương phù hợp nhất với hội ch�
 Chỉ chọn một bài thuốc cổ phương duy nhất, lý giải ngắn gọn vì sao phù hợp nếu cần.
 `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "❌ GPT không trả về kết quả.";
@@ -1254,18 +1234,13 @@ Hãy phân tích 3 bảng dữ liệu trên và lựa chọn các vị thuốc p
 Chỉ trả về danh sách tên các vị thuốc không trùng nhau, mỗi vị thuốc trên một dòng, kèm phân tích ngắn gọn lí do gợi ý vị thuốc đó.
 `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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",  // 🔁 thay bằng key thật của bạn
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "❌ GPT không trả kết quả.";
@@ -1330,18 +1305,13 @@ Yêu cầu:
 – Trả về danh sách tên vị thuốc không trùng nhau, mỗi dòng 1 tên kèm phân tích ngắn gọn lí do gợi ý vị thuốc đó.
 `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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",  // thay bằng khóa thật
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
@@ -1405,18 +1375,13 @@ Yêu cầu:
 – Chỉ trả về **tên các vị thuốc**, mỗi dòng 1 tên kèm giải thích ngắn gọn.
 `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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", // thay bằng khóa thật
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.3
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
@@ -1488,18 +1453,13 @@ Yêu cầu:
 Mỗi vị thuốc 1 dòng, kèm giải thích ngắn gọn.
 `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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", // thay bằng khóa thật
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
@@ -1559,18 +1519,13 @@ Yêu cầu:
 Kèm theo giải thích ngắn gọn. Mỗi vị thuốc 1 dòng.
 `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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", // thay bằng API key của bạn
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
@@ -1628,18 +1583,13 @@ Yêu cầu:
 Mỗi vị thuốc 1 dòng kèm theo giải thích ngắn gọn.
 `;
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Authorization": "Bearer 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", // thay bằng API key của bạn
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2
-    })
-  });
+const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ prompt: prompt })
+});
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
