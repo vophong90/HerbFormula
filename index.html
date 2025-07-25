@@ -272,7 +272,8 @@
   <h3 class="text-lg font-semibold mb-2">🧾 Toa thuốc tổng hợp</h3>
 
   <div class="mb-4">
-    <label class="font-semibold block mb-1">🤖 GPT đề xuất:</label>
+    <button onclick="renderFinalGPTFormula()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-2">
+    🤖 GPT đề xuất</button>
     <textarea id="final-gpt-formula" rows="3" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
               readonly placeholder="Toa thuốc tổng hợp từ mô hình GPT..."></textarea>
   </div>
@@ -1667,6 +1668,34 @@ const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   if (outputBox) outputBox.value = reply;
 
   alert("✅ Đã gợi ý xong vị thuốc dự phòng biến chứng.");
+}
+
+  function renderFinalGPTFormula() {
+  const strengthText = document.getElementById("sixs-strength")?.value || "";
+  const sideEffectText = document.getElementById("sixs-sideeffect")?.value || "";
+  const secondaryText = document.getElementById("sixs-secondary")?.value || "";
+
+  const allLines = [...strengthText, ...sideEffectText, ...secondaryText]
+    .join("\n")
+    .split("\n")
+    .map(line => line.trim())
+    .filter(line => line.includes(":"));
+
+  const herbMap = new Map();
+
+  for (const line of allLines) {
+    const [herb, dose] = line.split(":").map(p => p.trim());
+    if (!herbMap.has(herb)) {
+      herbMap.set(herb, dose);
+    }
+  }
+
+  const finalFormula = Array.from(herbMap.entries())
+    .map(([herb, dose]) => `${herb}: ${dose}`)
+    .join(", ");
+
+  const outputBox = document.getElementById("final-gpt-formula");
+  if (outputBox) outputBox.value = finalFormula;
 }
 
 //Hàm cho bước 5
