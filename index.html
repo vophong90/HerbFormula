@@ -1349,23 +1349,19 @@ async function suggestSymptomHerbsByGPT() {
   if (outputBox) outputBox.value = "⏳ Đang phân tích, vui lòng chờ...";
 
   // Load dữ liệu nội bộ
-  let organEffects = Array.isArray(window.organEffects)
-    ? window.organEffects
-    : typeof window.organEffects === "string"
-    ? JSON.parse(window.organEffects)
-    : [];
+let organEffects = typeof window.organEffects === "string"
+  ? JSON.parse(window.organEffects)
+  : window.organEffects || {};
 
-  let strengherb = Array.isArray(window.strengherb)
-    ? window.strengherb
-    : typeof window.strengherb === "string"
-    ? JSON.parse(window.strengherb)
-    : [];
+let herbsByEffect = typeof window.herbsByEffect === "string"
+  ? JSON.parse(window.herbsByEffect)
+  : window.herbsByEffect || {};
 
-  let doiDuoc = Array.isArray(window.doiDuocData)
-    ? window.doiDuocData
-    : typeof window.doiDuocData === "string"
-    ? JSON.parse(window.doiDuocData)
-    : [];
+let doiDuoc = Array.isArray(window.doiDuocData)
+  ? window.doiDuocData
+  : typeof window.doiDuocData === "string"
+  ? JSON.parse(window.doiDuocData)
+  : [];
 
   // Tạo prompt GPT
   const symptomList = symptoms
@@ -1418,50 +1414,73 @@ Trả về theo định dạng giống ví dụ dưới đây:
   });
 
   const resultLines = [];
+  
+for (const [symptomLabel, keywords] of keywordMap.entries()) {
+  const vasValue = symptoms.find(s => symptomLabel.includes(s.symptom))?.vas || 50;
+  const herbsSet = new Set();
 
-  for (const [symptomLabel, keywords] of keywordMap.entries()) {
-    const vasValue = symptoms.find(s => symptomLabel.includes(s.symptom))?.vas || 50;
-    const herbsSet = new Set();
-
-    keywords.forEach(keyword => {
-      // Tra organEffects
-      organEffects.forEach(item => {
-        if ((item.effect || "").includes(keyword)) {
-          herbsSet.add(item.herb);
-        }
-      });
-
-      // Tra strengherb
-      strengherb.forEach(item => {
-        if ((item.action || "").includes(keyword)) {
-          herbsSet.add(item.herb);
-        }
-      });
-
-      // Tra doiDuoc
-      doiDuoc.forEach(group => {
-        const groupMatch = group.group?.some(g =>
-          Object.values(g).some(val => (val || "").includes(keyword))
-        );
-        if (groupMatch) {
-          group.group?.forEach(g => herbsSet.add(g.name));
+  keywords.forEach(keyword => {
+    // ✅ Tra trong organEffects (object)
+    Object.entries(organEffects).forEach(([organ, effectMap]) => {
+      Object.entries(effectMap).forEach(([effect, herbs]) => {
+        if (effect.includes(keyword)) {
+          herbs.forEach(h => herbsSet.add(h));
         }
       });
     });
 
-    // Chọn vị thuốc có score gần với VAS
-    const allHerbs = Array.from(herbsSet);
-    const herbsWithScore = allHerbs.map(h => {
-      const item = strengherb.find(x => x.herb === h);
-      const score = item?.score ?? null;
-      const diff = score !== null ? Math.abs(score - vasValue) : Infinity;
-      return { herb: h, score, diff };
+    // ✅ Tra trong herbsByEffect (object)
+    Object.entries(herbsByEffect).forEach(([effect, herbs]) => {
+      if (effect.includes(keyword)) {
+        herbs.forEach(h => herbsSet.add(h.vietnamese)); // hoặc `${h.vietnamese} (${h.latin})`
+      }
     });
 
-    const selected = herbsWithScore
-      .sort((a, b) => a.diff - b.diff)
-      .slice(0, 3)
-      .map(h => h.herb);
+    // ✅ Tra trong doiDuoc (array)
+    doiDuoc.forEach(item => {
+      if ((item.doiduoc || "").includes(keyword) || (item.chutri || "").includes(keyword)) {
+        const herbs = (item.doiduoc || "").split("–").map(h => h.trim());
+        herbs.forEach(h => herbsSet.add(h));
+      }
+    });
+  });
+
+const allHerbs = Array.from(herbsSet);
+
+// 1. Lấy các vị có score từ herbsByEffect
+const herbsWithScore = allHerbs.map(h => {
+  let found = null;
+  Object.values(herbsByEffect).some(effectList => {
+    const match = effectList.find(item => item.vietnamese === h);
+    if (match) {
+      found = match;
+      return true;
+    }
+    return false;
+  });
+
+  const score = found?.score ?? null;
+  const diff = score !== null ? Math.abs(score - vasValue) : Infinity;
+  return { herb: h, score, diff };
+});
+
+// 2. Lấy top 3 theo score gần VAS
+const scoredSelected = herbsWithScore
+  .filter(h => h.score !== null)
+  .sort((a, b) => a.diff - b.diff)
+  .slice(0, 3)
+  .map(h => h.herb);
+
+// 3. Lấy tất cả vị thuốc chỉ xuất hiện từ doiDuoc (không có score)
+const doiDuocOnly = allHerbs.filter(h => {
+  const hasScore = Object.values(herbsByEffect).some(effectList =>
+    effectList.some(item => item.vietnamese === h)
+  );
+  return !hasScore;
+});
+
+// 4. Gộp lại: vị có score gần VAS + tất cả vị từ doiDuoc
+const selected = [...scoredSelected, ...doiDuocOnly];
 
     if (selected.length === 0) {
     resultLines.push(`${symptomLabel}: (Không tìm thấy vị thuốc phù hợp với từ khóa)`);
