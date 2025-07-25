@@ -1211,9 +1211,9 @@ async function suggestSourceHerbsByGPT() {
   const sourceBox = document.getElementById("sixs-source");
   if (sourceBox) sourceBox.value = "⏳ Đang phân tích, vui lòng chờ...";
 
-  const doiDuoc = window.doiDuocData || [];
-  const organEffects = window.organEffects || [];
-  const strengherb = window.strengherb || [];
+const doiDuoc = Array.isArray(window.doiDuocData) ? window.doiDuocData : [];
+const organEffects = Array.isArray(window.organEffects) ? window.organEffects : [];
+const strengherb = Array.isArray(window.strengherb) ? window.strengherb : [];
 
   // Giai đoạn 1: GPT phân tích nguyên nhân, pháp trị, từ khóa
   const prompt = `
@@ -1330,9 +1330,9 @@ async function suggestSymptomHerbsByGPT() {
     .map(s => `– ${s.symptom} (VAS ${s.vas})`)
     .join("\n");
 
-  const doiDuoc = window.doiDuocData || [];
-  const organEffects = window.organEffects || [];
-  const strengherb = window.strengherb || [];
+const doiDuoc = Array.isArray(window.doiDuocData) ? window.doiDuocData : [];
+const organEffects = Array.isArray(window.organEffects) ? window.organEffects : [];
+const strengherb = Array.isArray(window.strengherb) ? window.strengherb : [];
 
   // Gửi prompt cho GPT để phân tích cơ chế và từ khóa
   const prompt = `
@@ -1459,9 +1459,9 @@ async function suggestSiteHerbsByGPT() {
     .map(s => `– ${s.symptom} (VAS ${s.vas})`)
     .join("\n");
 
-  const organEffects = window.organEffects || [];
-  const strengherb = window.strengherb || [];
-  const doiDuoc = window.doiDuocData || [];
+const doiDuoc = Array.isArray(window.doiDuocData) ? window.doiDuocData : [];
+const organEffects = Array.isArray(window.organEffects) ? window.organEffects : [];
+const strengherb = Array.isArray(window.strengherb) ? window.strengherb : [];
 
   // Giai đoạn 1: GPT phân tích vùng bị ảnh hưởng
   async function getAffectedSitesFromGPT(syndrome, topSymptomsText) {
