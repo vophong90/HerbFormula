@@ -1369,22 +1369,21 @@ let doiDuoc = Array.isArray(window.doiDuocData)
     .map(s => `- ${s.symptom} (VAS ${s.vas})`)
     .join("\n");
 
- const prompt = `
-Bạn là chuyên gia Y học cổ truyền.
+const prompt = `
+Bạn là chuyên gia Y học cổ truyền (Trung y, 中醫), quen thuộc với thuật ngữ trong các sách kinh điển như Nội Kinh, Thương Hàn Luận, Kim Quỹ Yếu Lược.
 
 Dưới đây là danh sách triệu chứng người bệnh đang có:
 ${symptomList}
 
-Yêu cầu: Với mỗi triệu chứng, hãy liệt kê:
-1. Các từ khóa đồng nghĩa hoặc tương đương bằng **tiếng thuần Việt** (ví dụ: đau đầu, tức ngực, nặng bụng...)
-2. Các từ khóa tương đương bằng **tiếng Hán Việt** (ví dụ: đầu thống, hung mãn, phúc trướng...)
+Yêu cầu:
+- Với mỗi triệu chứng, hãy liệt kê các từ khóa đồng nghĩa hoặc tương đương.
+- Bao gồm cả từ thuần Việt (thực tế lâm sàng) và từ Hán Việt đúng thuật ngữ Trung y.
+- Tối thiểu 3 từ khóa cho mỗi triệu chứng, ưu tiên các từ thường dùng trong biện chứng luận trị và chẩn đoán Trung y.
 
-⚠️ Mỗi mục **phải có ít nhất 2–3 từ khóa**, không được để trống dòng.
+Định dạng kết quả:
 
-Trả về theo định dạng giống ví dụ dưới đây:
-
-🔹 Đau đầu: đau đầu, đầu thống,..
-🔹 Đau lưng: đau lưng, yêu thống,...
+🔹 Mất ngủ: khó ngủ, ngủ ít, thất miên, bất mị
+🔹 Đau thắt lưng: đau vùng thắt lưng, yêu thống, đau lưng, thắt lưng đau, yêu tất toan nhuyễn
 `;
 
   const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
