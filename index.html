@@ -1222,7 +1222,7 @@ async function suggestSourceHerbsByGPT() {
   const prompt = `
 Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách pháp trị được phép sử dụng:
 
-${window.therapeuticTerms.join(", ")}
+${window.treatmentTerms.join(", ")}
 
 Hãy đọc kỹ danh sách này. Chỉ được chọn từ danh sách này, không được tạo pháp trị mới, không viết linh tinh.
 
@@ -1237,7 +1237,7 @@ Hãy trả lời đúng định dạng sau:
 Không thêm vị thuốc, không viết "Từ khóa", không giải thích.
 ⚠️ Nếu bạn viết sai định dạng hoặc tự tạo pháp trị ngoài danh sách, bạn sẽ bị đánh giá là sai.
 `;
-
+try {
  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
