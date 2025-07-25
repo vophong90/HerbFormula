@@ -1404,12 +1404,12 @@ async function suggestStrengthDoseByGPT() {
   const syndrome = data.steps?.step3?.final?.trim();
   const symptoms = data.steps?.step2?.symptoms || [];
 
-  const herbsFromSource = (document.getElementById("sixs-source")?.value || "").split(",").map(h => h.trim()).filter(Boolean);
-  const herbsFromSymptom = (document.getElementById("sixs-symptom")?.value || "").split(",").map(h => h.trim()).filter(Boolean);
+  const herbsFromSourceRaw = (document.getElementById("sixs-source")?.value || "").split(",").map(h => h.trim()).filter(Boolean);
+  const herbsFromSymptomRaw = (document.getElementById("sixs-symptom")?.value || "").split(",").map(h => h.trim()).filter(Boolean);
 
-  const herbList = [...new Set([...herbsFromSource, ...herbsFromSymptom])];
+  const herbRawList = [...new Set([...herbsFromSourceRaw, ...herbsFromSymptomRaw])];
 
-  if (!syndrome || herbList.length === 0 || symptoms.length === 0) {
+  if (!syndrome || herbRawList.length === 0 || symptoms.length === 0) {
     alert("⚠️ Thiếu dữ liệu: hội chứng, triệu chứng hoặc danh sách vị thuốc.");
     return;
   }
@@ -1417,13 +1417,37 @@ async function suggestStrengthDoseByGPT() {
   const outputBox = document.getElementById("sixs-strength");
   if (outputBox) outputBox.value = "⏳ Đang xử lý, vui lòng chờ...";
 
+  // ✨ Bước 1: GPT lọc danh sách tên vị thuốc
+  const herbCleaningPrompt = `
+Dưới đây là danh sách vị thuốc, mỗi dòng có thể gồm tên và mô tả:
+
+${herbRawList.join("\n")}
+
+Hãy chỉ trích ra **tên vị thuốc gốc** (không kèm mô tả), đúng chính tả, mỗi dòng một tên, không trùng lặp.
+`;
+
+  const cleanRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: herbCleaningPrompt })
+  });
+
+  const cleanResult = await cleanRes.json();
+  const cleanedHerbs = cleanResult.choices?.[0]?.message?.content
+    ?.split("\n")
+    .map(line => line.trim())
+    .filter(Boolean) || [];
+
+  const herbList = [...new Set(cleanedHerbs)];
+
+  // ✨ Bước 2: Tiếp tục prompt chính như cũ
   const herbalDataStr = JSON.stringify(window.herbalData || []);
   const symptomList = symptoms
     .sort((a, b) => b.vas - a.vas)
     .map(s => `– ${s.symptom} (VAS: ${s.vas})`)
     .join("\n");
 
-  const prompt = `
+  const mainPrompt = `
 Bạn là bác sĩ Y học cổ truyền. Dưới đây là thông tin lâm sàng:
 
 🔸 Hội chứng YHCT: ${syndrome}
@@ -1450,16 +1474,14 @@ Yêu cầu:
 
 [vị thuốc]: [liều dùng đề xuất]g
 
-Mỗi vị thuốc 1 dòng, kèm giải thích ngắn gọn.
+Mỗi vị thuốc 1 dòng, không kèm phân tích hay giải thích.
 `;
 
-const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ prompt: prompt })
-});
+  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: mainPrompt })
+  });
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
@@ -1475,9 +1497,9 @@ async function suggestSideEffectModifiers() {
   const herbsS1 = (document.getElementById("sixs-source")?.value || "").split(",").map(s => s.trim()).filter(Boolean);
   const herbsS2 = (document.getElementById("sixs-symptom")?.value || "").split(",").map(s => s.trim()).filter(Boolean);
   const herbsS3 = (document.getElementById("sixs-site")?.value || "").split(",").map(s => s.trim()).filter(Boolean);
-  const allHerbs = [...new Set([...herbsS1, ...herbsS2, ...herbsS3])];
+  const herbRawList = [...new Set([...herbsS1, ...herbsS2, ...herbsS3])];
 
-  if (allHerbs.length === 0) {
+  if (herbRawList.length === 0) {
     alert("⚠️ Chưa có vị thuốc từ các bước trước.");
     return;
   }
@@ -1485,6 +1507,33 @@ async function suggestSideEffectModifiers() {
   const outputBox = document.getElementById("sixs-sideeffect");
   if (outputBox) outputBox.value = "⏳ GPT đang phân tích, vui lòng chờ...";
 
+  // 🧠 BƯỚC 1: GPT chuẩn hóa tên vị thuốc
+  const cleanPrompt = `
+Dưới đây là danh sách vị thuốc, mỗi dòng có thể gồm cả mô tả:
+
+${herbRawList.join("\n")}
+
+Hãy chỉ liệt kê lại **tên vị thuốc gốc** (không kèm mô tả), mỗi dòng một tên, không trùng lặp.
+`;
+
+  const cleanRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: cleanPrompt })
+  });
+
+  const cleanResult = await cleanRes.json();
+  const herbList = cleanResult.choices?.[0]?.message?.content
+    ?.split("\n")
+    .map(line => line.trim())
+    .filter(Boolean) || [];
+
+  if (herbList.length === 0) {
+    alert("❌ GPT không trích xuất được tên vị thuốc.");
+    return;
+  }
+
+  // 🧠 BƯỚC 2: Gọi GPT phân tích tác dụng phụ và gợi ý bồi bổ
   const herbalListStr = JSON.stringify(window.herbalData || []);
   const doiDuocStr = JSON.stringify(window.doiDuocData || []);
   const organEffectsStr = JSON.stringify(window.organEffects || []);
@@ -1494,7 +1543,7 @@ async function suggestSideEffectModifiers() {
 Bạn là chuyên gia Trung y. Tôi cung cấp các thông tin sau:
 
 🔸 Hội chứng YHCT: ${syndrome}
-🔸 Danh sách vị thuốc đã dùng (S1, S2, S3): ${allHerbs.join(", ")}
+🔸 Danh sách vị thuốc đã dùng (S1, S2, S3): ${herbList.join(", ")}
 
 🔹 Dữ liệu vị thuốc từ herbal_list:
 ${herbalListStr}
@@ -1519,13 +1568,13 @@ Yêu cầu:
 Kèm theo giải thích ngắn gọn. Mỗi vị thuốc 1 dòng.
 `;
 
-const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ prompt: prompt })
-});
+  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ prompt: prompt })
+  });
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "";
