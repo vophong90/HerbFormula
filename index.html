@@ -1220,24 +1220,22 @@ async function suggestSourceHerbsByGPT() {
   const treatmentListText = allTreatments.join(", ");
 
   const prompt = `
-Bạn là chuyên gia Y học cổ truyền.
+Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách pháp trị được phép sử dụng:
 
-Hội chứng YHCT: ${syndrome}
+${window.therapeuticTerms.join(", ")}
 
-Dưới đây là danh sách pháp trị chuẩn (chỉ được chọn trong danh sách này, không được thêm ngoài danh sách):
+Hãy đọc kỹ danh sách này. Chỉ được chọn từ danh sách này, không được tạo pháp trị mới, không viết linh tinh.
 
-${treatmentListText}
+Hội chứng Y học cổ truyền: ${syndrome}
 
-Hãy cho biết:
-+ Nguyên nhân: ...
-+ Cơ chế bệnh sinh: ...
-+ Pháp trị: chọn 3–7 pháp trị phù hợp với hội chứng trên, chỉ được chọn từ danh sách đã cho, viết trên một dòng, ngăn cách bằng dấu phẩy.
+Hãy trả lời đúng định dạng sau:
 
-Trả lời đúng định dạng:
-+ Nguyên nhân: ...
-+ Cơ chế bệnh sinh: ...
-+ Pháp trị: pháp trị 1, pháp trị 2, pháp trị 3, ...
-Không cần giải thích thêm.
++ Nguyên nhân: (1 câu mô tả)
++ Cơ chế bệnh sinh: (1–2 câu mô tả)
++ Pháp trị: (3–7 pháp trị, cách nhau bằng dấu phẩy, chỉ dùng từ danh sách được cung cấp)
+
+Không thêm vị thuốc, không viết "Từ khóa", không giải thích.
+⚠️ Nếu bạn viết sai định dạng hoặc tự tạo pháp trị ngoài danh sách, bạn sẽ bị đánh giá là sai.
 `;
 
   try {
