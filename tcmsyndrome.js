@@ -1,4 +1,4 @@
-window.heartSyndromes = [
+window.tcmSyndromes = [
   {
     stt: 1145,
     tenViet: "Chứng Tâm khí hư",
