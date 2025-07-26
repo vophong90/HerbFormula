@@ -887,40 +887,110 @@ function saveStep3() {
 
 async function autoSuggestClassicSyndrome() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
-  const raw = data.steps?.step1?.symptoms || "";
-  const vietSymptoms = raw.split("\n").map(s => s.trim()).filter(s => s);
-  const outputBoxClassic = document.getElementById("syndrome-classic");
+  const symptoms = data.steps?.step2?.symptoms || [];
+  const outputBox = document.getElementById("syndrome-classic");
 
-  if (!vietSymptoms.length) {
-    alert("⚠️ Chưa có triệu chứng để phân tích.");
+  if (!symptoms.length) {
+    alert("⚠️ Chưa có dữ liệu triệu chứng từ bước 2.");
     return;
   }
-  if (outputBoxClassic) outputBoxClassic.value = "⏳ Đang xử lý, vui lòng chờ...";
 
-  const prompt = `
-Bạn là một bác sĩ Y học cổ truyền. Dựa vào các triệu chứng sau:
+  if (outputBox) outputBox.value = "⏳ Đang xử lý, vui lòng chờ...";
 
-${vietSymptoms.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+  // 1️⃣ GPT: Dịch triệu chứng và tạo từ đồng nghĩa tiếng Anh
+  const symptomTexts = symptoms.map(s => s.symptom.trim()).filter(Boolean);
+  const prompt1 = `
+Dịch các triệu chứng sau sang tiếng Anh và tạo 3–5 từ hoặc cụm từ đồng nghĩa gần nghĩa cho mỗi triệu chứng. Trả lời đúng chuẩn JSON, không thêm chú thích. Ví dụ:
+{
+  "Đau đầu vùng trán": ["frontal headache", "pain in forehead", "head pain above eyes"],
+  ...
+}
+Danh sách triệu chứng:
+${symptomTexts.map((s, i) => `${i + 1}. ${s}`).join("\n")}
+`;
 
-Hãy liệt kê tối đa 5 hội chứng Y học cổ truyền phù hợp nhất, theo thứ tự ưu tiên, kèm mô tả ngắn cho từng hội chứng tại sao phù hợp với triệu chứng trên. Chú ý dùng thuật ngữ chuyên ngành Trung y, ưu tiên giữ các thuật ngữ Hán Việt. Chỉ trả lời theo định dạng:
+  let translatedKeywords = {};
+  try {
+    const gptRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt1 })
+    });
 
-1. [Tên hội chứng] – [Giải thích ngắn]
-2. ...
-  `;
+    const gptJson = await gptRes.json();
+    const gptReply = gptJson.choices?.[0]?.message?.content || "";
+    translatedKeywords = JSON.parse(gptReply);
+  } catch (err) {
+    alert("❌ Lỗi GPT khi dịch triệu chứng.");
+    console.error("GPT error:", err);
+    return;
+  }
 
-  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ prompt: prompt })
-});
+  // 2️⃣ Gọi API TCMIP với từ khóa tiếng Anh
+  const englishSynonyms = Object.values(translatedKeywords).flat().filter(Boolean);
 
-  const result = await res.json();
-  const reply = result.choices?.[0]?.message?.content || "❌ GPT không trả về kết quả.";
+  const tcmipPayload = {
+    synd_dict: { MySyndrome: englishSynonyms },
+    language: "en"
+  };
 
-  document.getElementById("syndrome-classic").value = reply;
-  alert("✅ Đã gợi ý hội chứng theo kinh điển.");
+  let syndromeList = [];
+  try {
+    const res = await fetch("https://www.tcmip.cn/Analysis/ForecastSyndrome/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(tcmipPayload)
+    });
+
+    const result = await res.json();
+    syndromeList = result.result || [];
+  } catch (err) {
+    alert("❌ Lỗi khi gọi API dự báo hội chứng.");
+    console.error("TCMIP API error:", err);
+    return;
+  }
+
+  if (!syndromeList.length) {
+    outputBox.value = "⚠️ Không tìm thấy hội chứng phù hợp.";
+    return;
+  }
+
+  // 3️⃣ GPT: Dịch tên hội chứng và lý do sang tiếng Việt (ưu tiên Hán Việt)
+  const engSyndromeList = syndromeList
+    .map((item, i) => `${i + 1}. ${item.name} – ${item.reason || "No explanation"}`)
+    .join("\n");
+
+  const prompt2 = `
+Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách các hội chứng bằng tiếng Anh:
+${engSyndromeList}
+Hãy dịch chúng sang tiếng Việt chuyên ngành Trung y. **Tên hội chứng phải được dịch ra bằng từ Hán Việt chuẩn xác**. Mỗi dòng nên giữ định dạng:
+1. [Tên hội chứng Hán Việt] – [Lý do giải thích bằng tiếng Việt chuyên ngành]
+Chỉ trả lời theo định dạng yêu cầu, không thêm nội dung khác.
+`;
+
+  try {
+    const gptRes2 = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt2 })
+    });
+
+    const gptJson2 = await gptRes2.json();
+    const reply2 = gptJson2.choices?.[0]?.message?.content || "❌ GPT không trả về bản dịch.";
+
+    outputBox.value = reply2;
+
+    // 🔒 Lưu vào localStorage
+    data.steps = data.steps || {};
+    data.steps.step3 = data.steps.step3 || {};
+    data.steps.step3.syndromeClassic = reply2;
+    localStorage.setItem("currentData", JSON.stringify(data));
+
+    alert("✅ Đã gợi ý hội chứng theo dữ liệu và dịch sang Hán Việt.");
+  } catch (err) {
+    alert("❌ Lỗi GPT khi dịch tên hội chứng sang tiếng Việt.");
+    console.error("GPT error 2:", err);
+  }
 }
 
 async function autoGenerateDiagnosticTree() {
