@@ -1373,8 +1373,15 @@ Yêu cầu:
       keywordMap.set(symptom, keywords);
     }
   });
+const keywordMapObj = Object.fromEntries(keywordMap);
 
-  const resultLines = [];
+data.steps = data.steps || {};
+data.steps.step4 = data.steps.step4 || {};
+data.steps.step4.keywordMap = keywordMapObj;
+
+localStorage.setItem("currentData", JSON.stringify(data));
+  
+const resultLines = [];
   
 for (const [symptomLabel, keywords] of keywordMap.entries()) {
   const vasValue = symptoms.find(s => symptomLabel.includes(s.symptom))?.vas || 50;
@@ -1607,7 +1614,7 @@ Chỉ trả về tên các vị thuốc, cách nhau dấu phẩy, không kèm ph
 async function suggestStrengthDoseByGPT() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
   const symptoms = data.steps?.step2?.symptoms || [];
-  const keywordMap = data.steps?.step4?.keywordMap; // keywordMap được lưu từ suggestSymptomHerbsByGPT
+  const keywordMap = data.steps?.step4?.keywordMap;
   const outputBox = document.getElementById("sixs-strength");
 
   if (!keywordMap || !symptoms.length) {
