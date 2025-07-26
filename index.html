@@ -909,7 +909,7 @@ Danh sách triệu chứng:
 ${symptomTexts.map((s, i) => `${i + 1}. ${s}`).join("\n")}
 `;
 
-  let translatedKeywords = {};
+ let translatedKeywords = {};
 try {
   const gptRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
     method: "POST",
@@ -920,18 +920,16 @@ try {
   const gptJson = await gptRes.json();
   const gptReply = gptJson.choices?.[0]?.message?.content || "";
 
-  const cleanedJson = gptReply
-    .replace(/```json\s*/i, "")
-    .replace(/```$/, "")
-    .trim();
+  const match = gptReply.match(/```json\s*([\s\S]*?)```/i);
+  const jsonText = match ? match[1].trim() : gptReply.trim();
 
-  translatedKeywords = JSON.parse(cleanedJson);
+  translatedKeywords = JSON.parse(jsonText);
 } catch (err) {
   alert("❌ Lỗi GPT khi dịch triệu chứng.");
   console.error("GPT error:", err);
   return;
 }
-
+  
   // 2️⃣ Gọi API TCMIP với từ khóa tiếng Anh
   const englishSynonyms = Object.values(translatedKeywords).flat().filter(Boolean);
 
