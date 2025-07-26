@@ -946,14 +946,17 @@ ${rawSymptoms.join("\n")}
   });
 
   const rawMap = await res2.text();
-  let keywordMap = {};
+ let keywordMap = {};
+try {
+  const gptJson = await res2.json();
+  const content = gptJson.choices?.[0]?.message?.content || "";
 
-  try {
-    keywordMap = JSON.parse(rawMap);
-  } catch (err) {
-    outputBox.value = "❌ GPT trả về keywordMap không hợp lệ.";
-    return;
-  }
+  keywordMap = JSON.parse(content);
+} catch (err) {
+  outputBox.value = "❌ Lỗi khi phân tích JSON trả về từ GPT.";
+  console.error(err);
+  return;
+}
 
   // 3. Xây dựng danh sách hội chứng và triệu chứng khớp
   const matrix = window.syndromeSymptomMatrix;
