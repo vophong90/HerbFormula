@@ -1466,6 +1466,24 @@ Yêu cầu:
       resultLines.push(`${symptomLabel}: ${selected.join(", ")}`);
     }
   }
+  
+// 🔄 Lưu symptomHerbs vào step4
+const symptomHerbsObj = {};
+resultLines.forEach(line => {
+  const [label, herbsStr] = line.split(":");
+  if (!label || !herbsStr) return;
+
+  const herbs = herbsStr
+    .split(",")
+    .map(h => h.trim().replace(/\(.*\)/, "").trim())
+    .filter(Boolean);
+
+  symptomHerbsObj[label.trim()] = herbs;
+});
+data.steps = data.steps || {};
+data.steps.step4 = data.steps.step4 || {};
+data.steps.step4.symptomHerbs = symptomHerbsObj;
+localStorage.setItem("currentData", JSON.stringify(data));
 
   if (outputBox) outputBox.value = resultLines.join("\n");
 
