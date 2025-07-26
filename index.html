@@ -905,10 +905,18 @@ async function autoSuggestClassicSyndrome() {
 
   // 1. GPT tách triệu chứng
   const symptomPrompt = `
-Bạn là chuyên gia Y học cổ truyền. Hãy đọc đoạn mô tả sau và trích ra danh sách TRIỆU CHỨNG lâm sàng, mỗi dòng là một triệu chứng rõ ràng, không cần giải thích:
+Bạn là chuyên gia Y học cổ truyền.
 
-"${rawText}"
-  `.trim();
+Hãy đọc kỹ đoạn mô tả bệnh cảnh bên dưới và trích xuất danh sách TRIỆU CHỨNG lâm sàng có giá trị chẩn đoán.
+
+✅ YÊU CẦU:
+- Mỗi triệu chứng viết trên một dòng riêng.
+- KHÔNG đánh số, KHÔNG giải thích.
+- Không viết lại đoạn mô tả.
+
+📌 Đoạn mô tả bệnh:
+"""${rawText}"""
+`.trim();
 
   const res1 = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
     method: "POST",
@@ -928,71 +936,73 @@ Bạn là chuyên gia Y học cổ truyền. Hãy đọc đoạn mô tả sau v�
 
   // 2. GPT tạo keywordMap
   const keywordPrompt = `
-Bạn là chuyên gia Trung y. Dưới đây là danh sách triệu chứng tiếng Việt. Với mỗi dòng, hãy liệt kê 2 từ khóa liên quan dùng trong Trung y (đồng nghĩa, từ tương đương hoặc từ Hán Việt). Trả kết quả dạng JSON như sau:
+Bạn là chuyên gia Y học cổ truyền.
+
+Hãy phân tích danh sách triệu chứng dưới đây và trả về 2 từ khóa liên quan đến mỗi triệu chứng, có thể là từ đồng nghĩa, từ Hán Việt, hoặc khái niệm tương đương dùng trong Y học cổ truyền Trung Hoa.
+
+📌 YÊU CẦU:
+- Trả về kết quả ở dạng JSON chuẩn, mỗi triệu chứng là một khóa (key), giá trị là một mảng gồm 2 chuỗi.
+- KHÔNG thêm giải thích, KHÔNG lặp lại triệu chứng đầu vào.
+- Đúng định dạng như sau:
 
 {
   "triệu chứng A": ["từ khóa 1", "từ khóa 2"],
-  ...
+  "triệu chứng B": ["từ khóa 1", "từ khóa 2"]
 }
 
-Dưới đây là danh sách triệu chứng:
-
+📋 Danh sách triệu chứng:
 ${rawSymptoms.join("\n")}
-  `.trim();
+`.trim();
 
   const res2 = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
     method: "POST",
     body: JSON.stringify({ prompt: keywordPrompt })
   });
 
-  const rawMap = await res2.text();
- let keywordMap = {};
-try {
-  const gptJson = await res2.json();
-  const content = gptJson.choices?.[0]?.message?.content || "";
-
-  keywordMap = JSON.parse(content);
-} catch (err) {
-  outputBox.value = "❌ Lỗi khi phân tích JSON trả về từ GPT.";
-  console.error(err);
-  return;
-}
+  let keywordMap = {};
+  try {
+    const gptJson = await res2.json();
+    const content = gptJson.choices?.[0]?.message?.content || "";
+    keywordMap = JSON.parse(content);
+  } catch (err) {
+    outputBox.value = "❌ Lỗi khi phân tích JSON trả về từ GPT.";
+    console.error(err);
+    return;
+  }
 
   // 3. Xây dựng danh sách hội chứng và triệu chứng khớp
   const matrix = window.syndromeSymptomMatrix;
   const tcmDefs = window.tcmSyndromes;
   const allSymptoms = Object.keys(keywordMap);
 
-  const uncovered = new Set(allSymptoms); // triệu chứng chưa được giải thích
+  const uncovered = new Set(allSymptoms);
   const selectedSyndromes = [];
 
-  // mapping hội chứng → danh sách triệu chứng mà nó giải thích được
   const syndromeCoverage = {};
 
   for (let syndromeName of matrix.syndromes) {
-  const relatedSymptoms = matrix.symptoms?.[syndromeName] || [];
-  const explained = [];
+    const relatedSymptoms = matrix.symptoms?.[syndromeName] || [];
+    const explained = [];
 
-  for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
-    if (!Array.isArray(keywords)) {
-      console.warn(`⚠️ keywords for symptom "${rawSymptom}" is not array:`, keywords);
-      continue;
-    }
+    for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
+      if (!Array.isArray(keywords)) {
+        console.warn(`⚠️ keywords for symptom "${rawSymptom}" is not array:`, keywords);
+        continue;
+      }
 
-    for (let kw of keywords) {
-      if (relatedSymptoms.some(s => s.includes(kw))) {
-        explained.push(rawSymptom);
-        break;
+      for (let kw of keywords) {
+        if (relatedSymptoms.some(s => s.includes(kw))) {
+          explained.push(rawSymptom);
+          break;
+        }
       }
     }
+
+    if (explained.length > 0) {
+      syndromeCoverage[syndromeName] = new Set(explained);
+    }
   }
 
-  if (explained.length > 0) {
-    syndromeCoverage[syndromeName] = new Set(explained);
-  }
-}
-
-  // 4. Thuật toán GREEDY: chọn ít hội chứng nhất giải thích được nhiều nhất
   while (uncovered.size > 0 && selectedSyndromes.length < 5) {
     let bestSyndrome = null;
     let bestNewCoverage = [];
@@ -1014,10 +1024,9 @@ try {
     });
 
     bestNewCoverage.forEach(sym => uncovered.delete(sym));
-    delete syndromeCoverage[bestSyndrome]; // không xét lại hội chứng đã chọn
+    delete syndromeCoverage[bestSyndrome];
   }
 
-  // 5. Hiển thị kết quả
   const outputText = selectedSyndromes.map(r =>
     `📌 Hội chứng: ${r.syndrome}
 🧾 Mô tả: ${r.definition}
@@ -1028,7 +1037,6 @@ try {
 
   outputBox.value = outputText || "⚠️ Không tìm thấy hội chứng phù hợp.";
 
-  // 6. Lưu kết quả
   data.steps = data.steps || {};
   data.steps.step3 = {
     selected: selectedSyndromes,
