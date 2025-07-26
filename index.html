@@ -910,21 +910,27 @@ ${symptomTexts.map((s, i) => `${i + 1}. ${s}`).join("\n")}
 `;
 
   let translatedKeywords = {};
-  try {
-    const gptRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: prompt1 })
-    });
+try {
+  const gptRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: prompt1 })
+  });
 
-    const gptJson = await gptRes.json();
-    const gptReply = gptJson.choices?.[0]?.message?.content || "";
-    translatedKeywords = JSON.parse(gptReply);
-  } catch (err) {
-    alert("❌ Lỗi GPT khi dịch triệu chứng.");
-    console.error("GPT error:", err);
-    return;
-  }
+  const gptJson = await gptRes.json();
+  const gptReply = gptJson.choices?.[0]?.message?.content || "";
+
+  const cleanedJson = gptReply
+    .replace(/```json\s*/i, "")
+    .replace(/```$/, "")
+    .trim();
+
+  translatedKeywords = JSON.parse(cleanedJson);
+} catch (err) {
+  alert("❌ Lỗi GPT khi dịch triệu chứng.");
+  console.error("GPT error:", err);
+  return;
+}
 
   // 2️⃣ Gọi API TCMIP với từ khóa tiếng Anh
   const englishSynonyms = Object.values(translatedKeywords).flat().filter(Boolean);
