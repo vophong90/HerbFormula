@@ -1639,8 +1639,8 @@ async function suggestStrengthDoseByGPT() {
   const herbVASMap = new Map(); // Map<herb → maxVAS>
 
   for (const [symptomLabel, keywords] of Object.entries(keywordMap)) {
-    const vas = symptoms.find(s => s.symptom === symptomLabel)?.vas || 5;
-    const matchedHerbs = symptomHerbs?.[symptomLabel] || [];
+    const vas = symptoms.find(s => s.symptom === symptomLabel.trim())?.vas || 5;
+    const matchedHerbs = symptomHerbs?.[symptomLabel.trim()] || [];
 
     matchedHerbs.forEach(h => {
       const prev = herbVASMap.get(h) || 0;
