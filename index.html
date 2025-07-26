@@ -868,7 +868,6 @@ function renderStep3() {
   populateStep3();
 }
 
-
 function saveStep3() {
   const model = document.getElementById("syndrome-model").value.trim();
   const classic = document.getElementById("syndrome-classic").value.trim();
@@ -971,6 +970,12 @@ ${rawSymptoms.join("\n")}
     const relatedSymptoms = matrix.symptoms?.[syndromeName] || [];
     const explained = [];
 
+    for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
+    if (!Array.isArray(keywords)) {
+      console.warn(`⚠️ keywords for symptom "${rawSymptom}" is not array:`, keywords);
+      continue;
+    }
+      
     for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
       for (let kw of keywords) {
         if (relatedSymptoms.some(s => s.includes(kw))) {
