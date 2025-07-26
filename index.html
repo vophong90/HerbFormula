@@ -2360,52 +2360,57 @@ function renderChartDirection() {
   if (missing.length) {
     alert("⚠️ Các vị thuốc thiếu dữ liệu:\n- " + missing.join("\n- "));
   }
-
-  // ⚙️ Canvas setup
+   // ⚙️ Canvas setup
   const canvas = document.getElementById("chart-direction");
   const ctx = canvas.getContext("2d");
   const width = canvas.width;
   const height = canvas.height;
-
   ctx.clearRect(0, 0, width, height);
 
-  // 🟦 Tọa độ gốc
+  // 📐 Tự động scale sao cho điểm M nằm trong khung
+  const margin = 40; // px biên an toàn
+  const maxAbsX = Math.abs(xTotal);
+  const maxAbsY = Math.abs(yTotal);
+
+  const scaleX = (width / 2 - margin) / (maxAbsX || 1); // tránh chia 0
+  const scaleY = (height / 2 - margin) / (maxAbsY || 1);
+  const scale = Math.min(scaleX, scaleY);
+
   const originX = width / 2;
   const originY = height / 2;
-  const scale = 20;      // 1 đơn vị = 20px
-  const maxUnit = 20;    // biểu đồ hiển thị từ -20 đến 20
+
+  // 🧭 Lưới động
+  const step = 1;
+  const maxGridX = Math.floor((width / 2) / scale);
+  const maxGridY = Math.floor((height / 2) / scale);
 
   ctx.lineWidth = 1;
-  ctx.strokeStyle = "#e5e7eb"; // lưới nhạt
+  ctx.strokeStyle = "#e5e7eb";
 
-  // 🎯 Lưới tọa độ
-  for (let i = -maxUnit; i <= maxUnit; i++) {
+  for (let i = -maxGridX; i <= maxGridX; i++) {
     if (i === 0) continue;
-
-    // Dọc
     ctx.beginPath();
     ctx.moveTo(originX + i * scale, 0);
     ctx.lineTo(originX + i * scale, height);
     ctx.stroke();
+  }
 
-    // Ngang
+  for (let i = -maxGridY; i <= maxGridY; i++) {
+    if (i === 0) continue;
     ctx.beginPath();
     ctx.moveTo(0, originY - i * scale);
     ctx.lineTo(width, originY - i * scale);
     ctx.stroke();
   }
 
-  // 🧭 Trục chính
+  // 🧭 Trục X, Y
   ctx.strokeStyle = "#000";
   ctx.lineWidth = 2;
-
-  // Trục X
   ctx.beginPath();
   ctx.moveTo(0, originY);
   ctx.lineTo(width, originY);
   ctx.stroke();
 
-  // Trục Y
   ctx.beginPath();
   ctx.moveTo(originX, 0);
   ctx.lineTo(originX, height);
@@ -2419,11 +2424,11 @@ function renderChartDirection() {
   ctx.fillText("🡑 Thăng", originX + 10, 20);
   ctx.fillText("🡓 Giáng", originX + 10, height - 10);
 
-  // 🔵 Điểm M
+  // 🔵 Vẽ điểm M
   const pointX = originX + xTotal * scale;
   const pointY = originY - yTotal * scale;
 
-  ctx.fillStyle = "#2563eb"; // Indigo
+  ctx.fillStyle = "#2563eb";
   ctx.shadowColor = "rgba(0,0,0,0.2)";
   ctx.shadowBlur = 4;
   ctx.beginPath();
