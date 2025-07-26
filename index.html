@@ -898,9 +898,9 @@ async function autoSuggestClassicSyndrome() {
 
   if (outputBox) outputBox.value = "⏳ Đang xử lý, vui lòng chờ...";
 
-  // 1️⃣ GPT: Tách riêng các triệu chứng tiếng Việt
+  // 1️⃣ GPT: Tách triệu chứng tiếng Việt từ đoạn mô tả
   const prompt1 = `
-Bạn là bác sĩ Y học cổ truyền. Hãy đọc đoạn sau và liệt kê ra các **triệu chứng lâm sàng** có trong đó, mỗi dòng là 1 triệu chứng, không giữ lại mô tả không liên quan.
+Bạn là bác sĩ Y học cổ truyền. Hãy đọc đoạn sau và liệt kê ra các **triệu chứng lâm sàng** có trong đó, mỗi dòng là 1 triệu chứng, không thêm mô tả.
 
 Văn bản: ${rawInput}
 
@@ -934,121 +934,69 @@ Trả lời:
     return;
   }
 
-  // 2️⃣ GPT: Ánh xạ từng triệu chứng sang tiếng Trung từ window.tcmSymptoms
-  const tcmSymptoms = Array.isArray(window.tcmSymptoms) ? window.tcmSymptoms : [];
+  // 2️⃣ Ánh xạ từng triệu chứng sang danh sách triệu chứng chuẩn
+  const matrixData = window.syndromeSymptomMatrix;
+  const allSymptoms = matrixData.symptoms || [];
 
-  const mappingPrompt = `
-Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách triệu chứng tiếng Việt và danh sách triệu chứng tiếng Trung.
-
-Hãy chọn **triệu chứng tiếng Trung phù hợp nhất** cho từng triệu chứng tiếng Việt. Nếu không khớp, không ghi gì cả.
-
-Triệu chứng tiếng Việt:
-${vietSymptoms.map((s, i) => `${i + 1}. ${s}`).join("\n")}
-
-Danh sách triệu chứng tiếng Trung:
-${tcmSymptoms.slice(0, 1000).join(", ")}
-
-Trả lời đúng JSON, ví dụ:
-{
-  "đau lưng": "腰痛",
-  "tiểu đêm": "夜尿频",
-  ...
-}
-`;
-
-  let symptomMap = {};
-  try {
-    const gptRes2 = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: mappingPrompt })
+  // Map đơn giản: nếu một triệu chứng con nằm trong triệu chứng chuẩn
+  const matchedSymptoms = new Set();
+  vietSymptoms.forEach(vsym => {
+    allSymptoms.forEach(stdSym => {
+      if (
+        stdSym.toLowerCase().includes(vsym.toLowerCase()) ||
+        vsym.toLowerCase().includes(stdSym.toLowerCase())
+      ) {
+        matchedSymptoms.add(stdSym);
+      }
     });
+  });
 
-    const gptJson2 = await gptRes2.json();
-    const gptReply2 = gptJson2.choices?.[0]?.message?.content || "";
-
-    const match = gptReply2.match(/```json\s*([\s\S]*?)```/i);
-    const jsonText = match ? match[1].trim() : gptReply2.trim();
-    symptomMap = JSON.parse(jsonText);
-  } catch (err) {
-    alert("❌ Lỗi GPT khi ánh xạ triệu chứng sang tiếng Trung.");
-    console.error(err);
+  if (matchedSymptoms.size === 0) {
+    outputBox.value = "⚠️ Không có triệu chứng nào khớp với ma trận.";
     return;
   }
 
-  const chineseSymptoms = Object.values(symptomMap).filter(v => v && v !== "null");
+  // 3️⃣ Giải bài toán Set Cover: hội chứng tối thiểu bao phủ tất cả triệu chứng matched
+  const syndromeList = matrixData.syndromes;
+  const matrix = matrixData.matrix;
 
-  if (!chineseSymptoms.length) {
-    outputBox.value = "⚠️ Không có triệu chứng tiếng Trung phù hợp.";
-    return;
+  const covered = new Set();
+  const selectedSyndromes = [];
+
+  const remainingSymptoms = Array.from(matchedSymptoms);
+  const remainingSymptomIndices = remainingSymptoms.map(sym => allSymptoms.indexOf(sym));
+
+  while (covered.size < remainingSymptomIndices.length) {
+    let bestSyndrome = null;
+    let bestCover = [];
+
+    for (let i = 0; i < syndromeList.length; i++) {
+      const syndromeVector = matrix[i];
+      const coveredNow = remainingSymptomIndices.filter(
+        idx => syndromeVector[idx] === 1 && !covered.has(idx)
+      );
+      if (coveredNow.length > bestCover.length) {
+        bestSyndrome = syndromeList[i];
+        bestCover = coveredNow;
+      }
+    }
+
+    if (!bestSyndrome || bestCover.length === 0) break;
+
+    bestCover.forEach(idx => covered.add(idx));
+    selectedSyndromes.push(bestSyndrome);
   }
 
-  // 3️⃣ Gọi API TCMID
-  const tcmipPayload = {
-    synd_dict: { MySyndrome: chineseSymptoms },
-    language: "zh"
-  };
+  // 4️⃣ Trả kết quả
+  if (selectedSyndromes.length === 0) {
+    outputBox.value = "⚠️ Không tìm được hội chứng nào phù hợp.";
+  } else {
+    outputBox.value = selectedSyndromes.map(s => `- ${s}`).join("\n");
 
-  let syndromes = [];
-  try {
-    const res = await fetch("https://tcmip-api.onrender.com/tcmip.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(tcmipPayload)
-    });
-
-    const json = await res.json();
-    syndromes = json.result || [];
-  } catch (err) {
-    alert("❌ Lỗi khi gọi API TCMID.");
-    console.error(err);
-    return;
-  }
-
-  if (!syndromes.length) {
-    outputBox.value = "⚠️ Không tìm thấy hội chứng phù hợp.";
-    return;
-  }
-
-  // 4️⃣ GPT: Dịch hội chứng từ tiếng Trung → Hán Việt
-  const rawSyndromes = syndromes.map(s => s.name).join("\n");
-
-  const promptTrans = `
-Bạn là chuyên gia dịch thuật Hán Việt trong Y học cổ truyền.
-
-Dưới đây là danh sách các hội chứng YHCT bằng tiếng Trung. Hãy dịch **chỉ tên hội chứng** sang tiếng Hán Việt đúng chuyên ngành. Không thêm mô tả, không ghi chú.
-
-Ví dụ:
-- 肾阳虚 → Thận dương hư
-- 肝气郁结 → Can khí uất kết
-
-Dịch các hội chứng sau:
-${rawSyndromes}
-
-Trả lời đúng định dạng:
-- ... → ...
-`;
-
-  try {
-    const gptRes3 = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ prompt: promptTrans })
-    });
-
-    const gptJson3 = await gptRes3.json();
-    const replyTrans = gptJson3.choices?.[0]?.message?.content || "❌ GPT không trả về bản dịch.";
-
-    outputBox.value = replyTrans;
-
-    // 🔒 Lưu lại
     data.steps = data.steps || {};
     data.steps.step3 = data.steps.step3 || {};
-    data.steps.step3.syndromeClassic = replyTrans;
+    data.steps.step3.syndromeClassic = selectedSyndromes;
     localStorage.setItem("currentData", JSON.stringify(data));
-  } catch (err) {
-    alert("❌ Lỗi GPT khi dịch kết quả hội chứng.");
-    console.error(err);
   }
 }
 
