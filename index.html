@@ -940,7 +940,7 @@ try {
 
   let syndromeList = [];
   try {
-    const res = await fetch("https://www.tcmip.cn/Analysis/ForecastSyndrome/", {
+    const res = await fetch("https://tcmip-api.onrender.com/tcmip.php", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(tcmipPayload)
