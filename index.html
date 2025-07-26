@@ -897,44 +897,44 @@ async function autoSuggestClassicSyndrome() {
 
   if (outputBox) outputBox.value = "⏳ Đang xử lý, vui lòng chờ...";
 
-  // 1️⃣ GPT: Dịch triệu chứng và tạo từ đồng nghĩa tiếng Anh
+  // 1️⃣ GPT: Dịch triệu chứng sang 2 từ khóa tiếng Trung
   const symptomTexts = symptoms.map(s => s.symptom.trim()).filter(Boolean);
   const prompt1 = `
-Dịch các triệu chứng sau sang tiếng Anh và tạo 3–5 từ hoặc cụm từ đồng nghĩa gần nghĩa cho mỗi triệu chứng. Trả lời đúng chuẩn JSON, không thêm chú thích. Ví dụ:
+Bạn là chuyên gia Y học cổ truyền. Với mỗi triệu chứng dưới đây, hãy dịch sang **2 từ hoặc cụm từ tiếng Trung** phù hợp nhất trong ngữ cảnh Trung y học. Chỉ trả về đúng định dạng JSON, không thêm chú thích. Ví dụ:
 {
-  "Đau đầu vùng trán": ["frontal headache", "pain in forehead", "head pain above eyes"],
+  "Đau đầu vùng trán": ["额部痛", "阳明头痛"],
   ...
 }
 Danh sách triệu chứng:
 ${symptomTexts.map((s, i) => `${i + 1}. ${s}`).join("\n")}
 `;
 
- let translatedKeywords = {};
-try {
-  const gptRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt: prompt1 })
-  });
+  let translatedCN = {};
+  try {
+    const gptRes = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: prompt1 })
+    });
 
-  const gptJson = await gptRes.json();
-  const gptReply = gptJson.choices?.[0]?.message?.content || "";
+    const gptJson = await gptRes.json();
+    const gptReply = gptJson.choices?.[0]?.message?.content || "";
 
-  const match = gptReply.match(/```json\s*([\s\S]*?)```/i);
-  const jsonText = match ? match[1].trim() : gptReply.trim();
+    const match = gptReply.match(/```json\s*([\s\S]*?)```/i);
+    const jsonText = match ? match[1].trim() : gptReply.trim();
 
-  translatedKeywords = JSON.parse(jsonText);
-} catch (err) {
-  alert("❌ Lỗi GPT khi dịch triệu chứng.");
-  console.error("GPT error:", err);
-  return;
-}
-  
-  // 2️⃣ Gọi API TCMIP với từ khóa tiếng Anh
-  const englishSynonyms = Object.values(translatedKeywords).flat().filter(Boolean);
+    translatedCN = JSON.parse(jsonText);
+  } catch (err) {
+    alert("❌ Lỗi GPT khi dịch triệu chứng sang tiếng Trung.");
+    console.error("GPT error:", err);
+    return;
+  }
+
+  // 2️⃣ Gửi từ khóa Trung sang server proxy của bạn
+  const chineseKeywords = Object.values(translatedCN).flat().filter(Boolean);
 
   const tcmipPayload = {
-    synd_dict: { MySyndrome: englishSynonyms },
+    synd_dict: { MySyndrome: chineseKeywords },
     language: "en"
   };
 
@@ -959,17 +959,24 @@ try {
     return;
   }
 
-  // 3️⃣ GPT: Dịch tên hội chứng và lý do sang tiếng Việt (ưu tiên Hán Việt)
+  // 3️⃣ GPT: Dịch tên hội chứng và lý do sang tiếng Việt, ưu tiên tên Hán Việt
   const engSyndromeList = syndromeList
     .map((item, i) => `${i + 1}. ${item.name} – ${item.reason || "No explanation"}`)
     .join("\n");
 
   const prompt2 = `
-Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách các hội chứng bằng tiếng Anh:
+Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách các hội chứng bằng tiếng Anh và lời giải thích:
+
 ${engSyndromeList}
-Hãy dịch chúng sang tiếng Việt chuyên ngành Trung y. **Tên hội chứng phải được dịch ra bằng từ Hán Việt chuẩn xác**. Mỗi dòng nên giữ định dạng:
-1. [Tên hội chứng Hán Việt] – [Lý do giải thích bằng tiếng Việt chuyên ngành]
-Chỉ trả lời theo định dạng yêu cầu, không thêm nội dung khác.
+
+Hãy dịch các dòng này sang tiếng Việt chuyên ngành. Trong đó:
+- **Tên hội chứng phải được dịch bằng Hán Việt chuẩn xác**
+- **Lý do phải viết bằng tiếng Việt y khoa – Trung y**
+
+Định dạng mỗi dòng:
+1. [Tên hội chứng Hán Việt] – [Lý do bằng tiếng Việt]
+
+Không thêm bất kỳ nội dung nào khác.
 `;
 
   try {
@@ -990,9 +997,9 @@ Chỉ trả lời theo định dạng yêu cầu, không thêm nội dung khác.
     data.steps.step3.syndromeClassic = reply2;
     localStorage.setItem("currentData", JSON.stringify(data));
 
-    alert("✅ Đã gợi ý hội chứng theo dữ liệu và dịch sang Hán Việt.");
+    alert("✅ Đã gợi ý hội chứng và dịch sang Hán Việt.");
   } catch (err) {
-    alert("❌ Lỗi GPT khi dịch tên hội chứng sang tiếng Việt.");
+    alert("❌ Lỗi GPT khi dịch kết quả hội chứng.");
     console.error("GPT error 2:", err);
   }
 }
