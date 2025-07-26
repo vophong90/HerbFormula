@@ -1363,18 +1363,19 @@ Yêu cầu:
   }
 
   // Xử lý kết quả từ GPT
-  const keywordMap = new Map(); // Map<symptom gốc → keywords[]>
-  const lines = reply.split("\n").map(l => l.trim()).filter(l => l.includes(":"));
+ const keywordMap = new Map();
 
-  symptoms.forEach((s, i) => {
-    const line = lines[i];
-    if (!line) return;
-    const [, keywordsStr] = line.split(":").map(t => t.trim());
-    const keywords = keywordsStr?.split(",").map(k => k.trim()).filter(k => k) || [];
-    if (keywords.length) {
-      keywordMap.set(s.symptom, keywords);
-    }
-  });
+lines.forEach(line => {
+  const [label, keywordsStr] = line.split(":").map(t => t.trim());
+  const keywords = keywordsStr?.split(",").map(k => k.trim()).filter(k => k) || [];
+
+  if (!label || !keywords.length) return;
+
+  const matched = symptoms.find(s => s.symptom.trim() === label);
+  if (matched) {
+    keywordMap.set(matched.symptom, keywords);
+  }
+});
 
   const keywordMapObj = Object.fromEntries(keywordMap);
 
