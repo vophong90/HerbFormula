@@ -995,12 +995,21 @@ try {
         continue;
       }
 
-      for (let kw of keywords) {
-        if (relatedSymptoms.some(s => s.includes(kw))) {
-          explained.push(rawSymptom);
-          break;
-        }
-      }
+      function normalize(str) {
+  return str.toLowerCase().normalize("NFC").replace(/[^\w\s]/gi, "").trim();
+}
+
+for (let kw of keywords) {
+  const kwNorm = normalize(kw);
+
+  if (relatedSymptoms.some(s => {
+    const sNorm = normalize(s);
+    return sNorm.includes(kwNorm) || kwNorm.includes(sNorm);  // So khớp 2 chiều
+  })) {
+    explained.push(rawSymptom);
+    break;
+  }
+}
     }
 
     if (explained.length > 0) {
