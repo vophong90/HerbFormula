@@ -1,4 +1,4 @@
-const heartSyndromes = [
+window.heartSyndromes = [
   {
     stt: 1145,
     tenViet: "Chứng Tâm khí hư",
