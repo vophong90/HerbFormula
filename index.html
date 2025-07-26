@@ -967,28 +967,27 @@ ${rawSymptoms.join("\n")}
   const syndromeCoverage = {};
 
   for (let syndromeName of matrix.syndromes) {
-    const relatedSymptoms = matrix.symptoms?.[syndromeName] || [];
-    const explained = [];
+  const relatedSymptoms = matrix.symptoms?.[syndromeName] || [];
+  const explained = [];
 
-    for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
+  for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
     if (!Array.isArray(keywords)) {
       console.warn(`⚠️ keywords for symptom "${rawSymptom}" is not array:`, keywords);
       continue;
     }
-      
-    for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
-      for (let kw of keywords) {
-        if (relatedSymptoms.some(s => s.includes(kw))) {
-          explained.push(rawSymptom);
-          break;
-        }
+
+    for (let kw of keywords) {
+      if (relatedSymptoms.some(s => s.includes(kw))) {
+        explained.push(rawSymptom);
+        break;
       }
     }
-
-    if (explained.length > 0) {
-      syndromeCoverage[syndromeName] = new Set(explained);
-    }
   }
+
+  if (explained.length > 0) {
+    syndromeCoverage[syndromeName] = new Set(explained);
+  }
+}
 
   // 4. Thuật toán GREEDY: chọn ít hội chứng nhất giải thích được nhiều nhất
   while (uncovered.size > 0 && selectedSyndromes.length < 5) {
