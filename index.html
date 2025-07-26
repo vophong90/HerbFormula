@@ -1311,15 +1311,15 @@ async function suggestSymptomHerbsByGPT() {
   if (outputBox) outputBox.value = "⏳ Đang phân tích, vui lòng chờ...";
 
   // Load dữ liệu nội bộ
-  let organEffects = typeof window.organEffects === "string"
+  const organEffects = typeof window.organEffects === "string"
     ? JSON.parse(window.organEffects)
     : window.organEffects || {};
 
-  let herbsByEffect = typeof window.herbsByEffect === "string"
+  const herbsByEffect = typeof window.herbsByEffect === "string"
     ? JSON.parse(window.herbsByEffect)
     : window.herbsByEffect || {};
 
-  let doiDuoc = Array.isArray(window.doiDuocData)
+  const doiDuoc = Array.isArray(window.doiDuocData)
     ? window.doiDuocData
     : typeof window.doiDuocData === "string"
     ? JSON.parse(window.doiDuocData)
@@ -1362,23 +1362,29 @@ Yêu cầu:
     return;
   }
 
-  // Xử lý kết quả từ GPT
- const keywordMap = new Map();
+  // 🌿 Xử lý kết quả từ GPT
+  const keywordMap = new Map();
+  const lines = reply.split("\n").map(l => l.trim()).filter(l => l.includes(":"));
 
-lines.forEach(line => {
-  const [label, keywordsStr] = line.split(":").map(t => t.trim());
-  const keywords = keywordsStr?.split(",").map(k => k.trim()).filter(k => k) || [];
+  symptoms.forEach(s => {
+    const matchedLine = lines.find(line => {
+      const rawLabel = line.split(":")[0]?.trim().replace(/^🔹\s*/, "");
+      return rawLabel === s.symptom.trim();
+    });
 
-  if (!label || !keywords.length) return;
+    if (!matchedLine) return;
 
-  const matched = symptoms.find(s => s.symptom.trim() === label);
-  if (matched) {
-    keywordMap.set(matched.symptom, keywords);
-  }
-});
+    const [, keywordsStr] = matchedLine.split(":").map(t => t.trim());
+    const keywords = keywordsStr?.split(",").map(k => k.trim()).filter(k => k) || [];
+
+    if (keywords.length) {
+      keywordMap.set(s.symptom, keywords);
+    }
+  });
 
   const keywordMapObj = Object.fromEntries(keywordMap);
 
+  // 🔄 Lưu kết quả
   data.steps = data.steps || {};
   data.steps.step4 = data.steps.step4 || {};
   data.steps.step4.keywordMap = keywordMapObj;
@@ -1462,6 +1468,7 @@ lines.forEach(line => {
   }
 
   if (outputBox) outputBox.value = resultLines.join("\n");
+
   alert("✅ Đã gợi ý vị thuốc theo triệu chứng và mức độ VAS.");
 }
 
@@ -1619,12 +1626,12 @@ Chỉ trả về tên các vị thuốc, cách nhau dấu phẩy, không kèm ph
 async function suggestStrengthDoseByGPT() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
   const symptoms = data.steps?.step2?.symptoms || [];
-  const keywordMap = data.steps?.step4?.keywordMap;
+  const keywordMap = data.steps?.step4?.keywordMap || {};
   const symptomHerbs = data.steps?.step4?.symptomHerbs || {};
   const outputBox = document.getElementById("sixs-strength");
 
-  if (!keywordMap || !symptoms.length) {
-    alert("⚠️ Chưa có dữ liệu keyword hoặc VAS.");
+  if (!symptoms.length || !Object.keys(symptomHerbs).length) {
+    alert("⚠️ Thiếu dữ liệu triệu chứng hoặc danh sách vị thuốc theo triệu chứng.");
     return;
   }
 
@@ -1639,9 +1646,9 @@ async function suggestStrengthDoseByGPT() {
 
   const herbVASMap = new Map(); // Map<herb → maxVAS>
 
-  for (const [symptomLabel, keywords] of Object.entries(keywordMap)) {
-    const vas = symptoms.find(s => s.symptom === symptomLabel.trim())?.vas || 5;
-    const matchedHerbs = symptomHerbs?.[symptomLabel.trim()] || [];
+  for (const symptom of symptoms) {
+    const vas = symptom.vas || 5;
+    const matchedHerbs = symptomHerbs?.[symptom.symptom.trim()] || [];
 
     matchedHerbs.forEach(h => {
       const prev = herbVASMap.get(h) || 0;
