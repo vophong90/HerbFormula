@@ -1311,19 +1311,19 @@ async function suggestSymptomHerbsByGPT() {
   if (outputBox) outputBox.value = "⏳ Đang phân tích, vui lòng chờ...";
 
   // Load dữ liệu nội bộ
-let organEffects = typeof window.organEffects === "string"
-  ? JSON.parse(window.organEffects)
-  : window.organEffects || {};
+  let organEffects = typeof window.organEffects === "string"
+    ? JSON.parse(window.organEffects)
+    : window.organEffects || {};
 
-let herbsByEffect = typeof window.herbsByEffect === "string"
-  ? JSON.parse(window.herbsByEffect)
-  : window.herbsByEffect || {};
+  let herbsByEffect = typeof window.herbsByEffect === "string"
+    ? JSON.parse(window.herbsByEffect)
+    : window.herbsByEffect || {};
 
-let doiDuoc = Array.isArray(window.doiDuocData)
-  ? window.doiDuocData
-  : typeof window.doiDuocData === "string"
-  ? JSON.parse(window.doiDuocData)
-  : [];
+  let doiDuoc = Array.isArray(window.doiDuocData)
+    ? window.doiDuocData
+    : typeof window.doiDuocData === "string"
+    ? JSON.parse(window.doiDuocData)
+    : [];
 
   // Tạo prompt GPT
   const symptomList = symptoms
@@ -1331,7 +1331,7 @@ let doiDuoc = Array.isArray(window.doiDuocData)
     .map(s => `- ${s.symptom} (VAS ${s.vas})`)
     .join("\n");
 
-const prompt = `
+  const prompt = `
 Bạn là chuyên gia Y học cổ truyền (Trung y, 中醫), quen thuộc với thuật ngữ trong các sách kinh điển như Nội Kinh, Thương Hàn Luận, Kim Quỹ Yếu Lược.
 
 Dưới đây là danh sách triệu chứng người bệnh đang có:
@@ -1363,99 +1363,103 @@ Yêu cầu:
   }
 
   // Xử lý kết quả từ GPT
-  const keywordMap = new Map(); // symptom -> [keyword1, keyword2, ...]
+  const keywordMap = new Map(); // Map<symptom gốc → keywords[]>
   const lines = reply.split("\n").map(l => l.trim()).filter(l => l.includes(":"));
 
-  lines.forEach(line => {
-    const [symptom, keywordsStr] = line.split(":").map(s => s.trim());
-    const keywords = keywordsStr.split(",").map(k => k.trim()).filter(k => k);
-    if (symptom && keywords.length) {
-      keywordMap.set(symptom, keywords);
+  symptoms.forEach((s, i) => {
+    const line = lines[i];
+    if (!line) return;
+    const [, keywordsStr] = line.split(":").map(t => t.trim());
+    const keywords = keywordsStr?.split(",").map(k => k.trim()).filter(k => k) || [];
+    if (keywords.length) {
+      keywordMap.set(s.symptom, keywords);
     }
   });
-const keywordMapObj = Object.fromEntries(keywordMap);
 
-data.steps = data.steps || {};
-data.steps.step4 = data.steps.step4 || {};
-data.steps.step4.keywordMap = keywordMapObj;
+  const keywordMapObj = Object.fromEntries(keywordMap);
 
-localStorage.setItem("currentData", JSON.stringify(data));
-  
-const resultLines = [];
-  
-for (const [symptomLabel, keywords] of keywordMap.entries()) {
-  const vasValue = symptoms.find(s => symptomLabel.includes(s.symptom))?.vas || 50;
-  const herbsSet = new Set();
+  data.steps = data.steps || {};
+  data.steps.step4 = data.steps.step4 || {};
+  data.steps.step4.keywordMap = keywordMapObj;
+  data.steps.step4.keywordMapRaw = reply;
 
-  keywords.forEach(keyword => {
-    // ✅ Tra trong organEffects (object)
-    Object.entries(organEffects).forEach(([organ, effectMap]) => {
-      Object.entries(effectMap).forEach(([effect, herbs]) => {
+  localStorage.setItem("currentData", JSON.stringify(data));
+
+  const resultLines = [];
+
+  for (const [symptomLabel, keywords] of keywordMap.entries()) {
+    const vasValue = symptoms.find(s => s.symptom === symptomLabel)?.vas || 50;
+    const herbsSet = new Set();
+
+    keywords.forEach(keyword => {
+      // ✅ Tra trong organEffects
+      Object.entries(organEffects).forEach(([organ, effectMap]) => {
+        Object.entries(effectMap).forEach(([effect, herbs]) => {
+          if (effect.includes(keyword)) {
+            herbs.forEach(h => herbsSet.add(h));
+          }
+        });
+      });
+
+      // ✅ Tra trong herbsByEffect
+      Object.entries(herbsByEffect).forEach(([effect, herbs]) => {
         if (effect.includes(keyword)) {
+          herbs.forEach(h => herbsSet.add(h.vietnamese));
+        }
+      });
+
+      // ✅ Tra trong doiDuoc
+      doiDuoc.forEach(item => {
+        if ((item.doiduoc || "").includes(keyword) || (item.chutri || "").includes(keyword)) {
+          const herbs = (item.doiduoc || "").split("–").map(h => h.trim());
           herbs.forEach(h => herbsSet.add(h));
         }
       });
     });
 
-    // ✅ Tra trong herbsByEffect (object)
-    Object.entries(herbsByEffect).forEach(([effect, herbs]) => {
-      if (effect.includes(keyword)) {
-        herbs.forEach(h => herbsSet.add(h.vietnamese)); // hoặc `${h.vietnamese} (${h.latin})`
-      }
+    const allHerbs = Array.from(herbsSet);
+
+    // 1. Lấy các vị có score
+    const herbsWithScore = allHerbs.map(h => {
+      let found = null;
+      Object.values(herbsByEffect).some(effectList => {
+        const match = effectList.find(item => item.vietnamese === h);
+        if (match) {
+          found = match;
+          return true;
+        }
+        return false;
+      });
+      const score = found?.score ?? null;
+      const diff = score !== null ? Math.abs(score - vasValue) : Infinity;
+      return { herb: h, score, diff };
     });
 
-    // ✅ Tra trong doiDuoc (array)
-    doiDuoc.forEach(item => {
-      if ((item.doiduoc || "").includes(keyword) || (item.chutri || "").includes(keyword)) {
-        const herbs = (item.doiduoc || "").split("–").map(h => h.trim());
-        herbs.forEach(h => herbsSet.add(h));
-      }
+    // 2. Lấy top 3 gần VAS
+    const scoredSelected = herbsWithScore
+      .filter(h => h.score !== null)
+      .sort((a, b) => a.diff - b.diff)
+      .slice(0, 3)
+      .map(h => h.herb);
+
+    // 3. Vị chỉ có từ doiDuoc
+    const doiDuocOnly = allHerbs.filter(h => {
+      const hasScore = Object.values(herbsByEffect).some(effectList =>
+        effectList.some(item => item.vietnamese === h)
+      );
+      return !hasScore;
     });
-  });
 
-const allHerbs = Array.from(herbsSet);
-
-// 1. Lấy các vị có score từ herbsByEffect
-const herbsWithScore = allHerbs.map(h => {
-  let found = null;
-  Object.values(herbsByEffect).some(effectList => {
-    const match = effectList.find(item => item.vietnamese === h);
-    if (match) {
-      found = match;
-      return true;
-    }
-    return false;
-  });
-
-  const score = found?.score ?? null;
-  const diff = score !== null ? Math.abs(score - vasValue) : Infinity;
-  return { herb: h, score, diff };
-});
-
-// 2. Lấy top 3 theo score gần VAS
-const scoredSelected = herbsWithScore
-  .filter(h => h.score !== null)
-  .sort((a, b) => a.diff - b.diff)
-  .slice(0, 3)
-  .map(h => h.herb);
-
-// 3. Lấy tất cả vị thuốc chỉ xuất hiện từ doiDuoc (không có score)
-const doiDuocOnly = allHerbs.filter(h => {
-  const hasScore = Object.values(herbsByEffect).some(effectList =>
-    effectList.some(item => item.vietnamese === h)
-  );
-  return !hasScore;
-});
-
-// 4. Gộp lại: vị có score gần VAS + tất cả vị từ doiDuoc
-const selected = [...scoredSelected, ...doiDuocOnly];
+    // 4. Gộp kết quả
+    const selected = [...scoredSelected, ...doiDuocOnly];
 
     if (selected.length === 0) {
-    resultLines.push(`${symptomLabel}: (Không tìm thấy vị thuốc phù hợp với từ khóa)`);
-  } else {
-    resultLines.push(`${symptomLabel}: ${selected.join(", ")}`);
-}
+      resultLines.push(`${symptomLabel}: (Không tìm thấy vị thuốc phù hợp với từ khóa)`);
+    } else {
+      resultLines.push(`${symptomLabel}: ${selected.join(", ")}`);
+    }
   }
+
   if (outputBox) outputBox.value = resultLines.join("\n");
   alert("✅ Đã gợi ý vị thuốc theo triệu chứng và mức độ VAS.");
 }
@@ -1615,6 +1619,7 @@ async function suggestStrengthDoseByGPT() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
   const symptoms = data.steps?.step2?.symptoms || [];
   const keywordMap = data.steps?.step4?.keywordMap;
+  const symptomHerbs = data.steps?.step4?.symptomHerbs || {};
   const outputBox = document.getElementById("sixs-strength");
 
   if (!keywordMap || !symptoms.length) {
@@ -1631,20 +1636,15 @@ async function suggestStrengthDoseByGPT() {
     ? JSON.parse(window.herbalData)
     : [];
 
-  // Map<herb → VAS>
-  const herbVASMap = new Map();
+  const herbVASMap = new Map(); // Map<herb → maxVAS>
 
   for (const [symptomLabel, keywords] of Object.entries(keywordMap)) {
-    const vas = symptoms.find(s => symptomLabel.includes(s.symptom))?.vas || 5;
+    const vas = symptoms.find(s => s.symptom === symptomLabel)?.vas || 5;
+    const matchedHerbs = symptomHerbs?.[symptomLabel] || [];
 
-    keywords.forEach(keyword => {
-      // Danh sách vị thuốc từ suggestSymptomHerbsByGPT đã có rồi
-      const matchedHerbs = data.steps?.step4?.symptomHerbs?.[symptomLabel] || [];
-
-      matchedHerbs.forEach(h => {
-        const prev = herbVASMap.get(h) || 0;
-        if (vas > prev) herbVASMap.set(h, vas);
-      });
+    matchedHerbs.forEach(h => {
+      const prev = herbVASMap.get(h) || 0;
+      if (vas > prev) herbVASMap.set(h, vas);
     });
   }
 
@@ -1683,7 +1683,6 @@ async function suggestStrengthDoseByGPT() {
     if (vas >= 8) dose = sd_dose * 3;
     else if (vas >= 6) dose = sd_dose * 2;
     else if (vas >= 4) dose = sd_dose * 1.5;
-    else dose = sd_dose;
 
     dose = Math.round(dose * 10) / 10;
     resultLines.push(`${herb}: ${dose}g (VAS ${vas})`);
