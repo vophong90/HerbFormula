@@ -940,7 +940,7 @@ Trả lời:
   const mappingPrompt = `
 Bạn là chuyên gia Y học cổ truyền. Dưới đây là danh sách triệu chứng tiếng Việt và danh sách triệu chứng tiếng Trung.
 
-Hãy chọn **triệu chứng tiếng Trung phù hợp nhất** cho từng triệu chứng tiếng Việt. Nếu không khớp, ghi "null".
+Hãy chọn **triệu chứng tiếng Trung phù hợp nhất** cho từng triệu chứng tiếng Việt. Nếu không khớp, không ghi gì cả.
 
 Triệu chứng tiếng Việt:
 ${vietSymptoms.map((s, i) => `${i + 1}. ${s}`).join("\n")}
