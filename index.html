@@ -1007,7 +1007,7 @@ const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
   headers: {
     "Content-Type": "application/json"
   },
-  body: JSON.stringify({ prompt: prompt })
+  body: JSON.stringify({ prompt: basePrompt })
 });
 
   const result = await res.json();
