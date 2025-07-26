@@ -969,6 +969,7 @@ try {
   }
 
   keywordMap = JSON.parse(content);
+  console.log("✅ keywordMap:", keywordMap);
 } catch (err) {
   outputBox.value = "❌ Lỗi khi phân tích JSON trả về từ GPT.";
   console.error("Lỗi JSON GPT:", err, "\nNội dung trả về:", content);
