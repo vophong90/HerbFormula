@@ -958,17 +958,22 @@ ${rawSymptoms.join("\n")}
     method: "POST",
     body: JSON.stringify({ prompt: keywordPrompt })
   });
-
+  
   let keywordMap = {};
-  try {
-    const gptJson = await res2.json();
-    const content = gptJson.choices?.[0]?.message?.content || "";
-    keywordMap = JSON.parse(content);
-  } catch (err) {
-    outputBox.value = "❌ Lỗi khi phân tích JSON trả về từ GPT.";
-    console.error(err);
-    return;
+try {
+  const gptJson = await res2.json();
+  let content = gptJson.choices?.[0]?.message?.content || "";
+
+  if (content.startsWith("```")) {
+    content = content.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
   }
+
+  keywordMap = JSON.parse(content);
+} catch (err) {
+  outputBox.value = "❌ Lỗi khi phân tích JSON trả về từ GPT.";
+  console.error("Lỗi JSON GPT:", err, "\nNội dung trả về:", content);
+  return;
+}
 
   // 3. Xây dựng danh sách hội chứng và triệu chứng khớp
   const matrix = window.syndromeSymptomMatrix;
