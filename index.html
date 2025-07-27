@@ -208,7 +208,14 @@
             placeholder="GPT sẽ hiển thị pháp trị phù hợp cho bệnh nhân tại đây..." readonly></textarea>
 </div>
 
-<!-- 3. Mô hình 6S -->
+ <!-- 3. Mô tả mức độ vị thuốc -->
+  <div class="mt-4">
+  <label for="effectSelector" class="font-semibold">🧪 Chọn pháp trị để xem biểu đồ vị thuốc:</label>
+  <select id="effectSelector" class="border rounded px-2 py-1 mt-1"></select>
+  <canvas id="herbBarChart" height="300" class="mt-4 w-full"></canvas>
+</div>
+  
+<!-- 4. Mô hình 6S -->
 <div class="mb-6">
   <label class="font-semibold block mb-2">🔬 Mô hình 6S của bài thuốc:</label>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1144,6 +1151,7 @@ function populateStep4() {
     const el = document.getElementById(id);
     if (el) el.value = value || "";
   });
+  setupHerbBarChartUI();
 }
 
   // Gợi ý pháp trị YHCT
@@ -1211,6 +1219,81 @@ Trình bày kết quả như sau:
   outputBox.value = reply;
 }
 
+function setupHerbBarChartUI() {
+  const select = document.getElementById("effectSelector");
+  const effects = Object.keys(window.herbsByEffect || {});
+
+  // Xóa cũ nếu có
+  select.innerHTML = '<option value="">-- Chọn pháp trị --</option>';
+
+  for (const eff of effects) {
+    const option = document.createElement("option");
+    option.value = eff;
+    option.textContent = eff;
+    select.appendChild(option);
+  }
+
+  select.addEventListener("change", () => {
+    const selected = select.value;
+    if (selected) {
+      drawHerbBarChart(selected);
+    }
+  });
+}
+
+  let herbChartInstance;
+
+function drawHerbBarChart(effect) {
+  const data = window.herbsByEffect?.[effect] || [];
+
+  const labels = data.map(d => d.vietnamese);
+  const scores = data.map(d => d.score);
+
+  const ctx = document.getElementById("herbBarChart").getContext("2d");
+
+  // Xóa biểu đồ cũ nếu có
+  if (herbChartInstance) {
+    herbChartInstance.destroy();
+  }
+
+  herbChartInstance = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Điểm mạnh của vị thuốc (score)",
+        data: scores,
+        backgroundColor: "rgba(54, 162, 235, 0.6)",
+        borderColor: "rgba(54, 162, 235, 1)",
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      scales: {
+        x: { beginAtZero: true },
+        y: { ticks: { autoSkip: false } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (context) => {
+              const herb = data[context.dataIndex];
+              return `${herb.vietnamese} (${herb.latin}): ${herb.score}`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+
+
+
+
+  
 async function suggestSourceHerbsByGPT() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
   const syndrome = data.steps?.step3?.final?.trim();
