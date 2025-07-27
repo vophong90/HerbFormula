@@ -896,192 +896,76 @@ async function autoSuggestClassicSyndrome() {
     return;
   }
 
-  if (!Array.isArray(window.syndromeSymptomMatrix?.syndromes) || !Array.isArray(window.tcmSyndromes)) {
-    alert("⚠️ Thiếu dữ liệu hội chứng hoặc mô tả hội chứng.");
-    return;
-  }
-
   outputBox.value = "⏳ Đang phân tích bằng GPT, vui lòng chờ...";
 
-  // 1. GPT tách triệu chứng
-  const symptomPrompt = `
+  const prompt = `
 Bạn là chuyên gia Y học cổ truyền.
 
-Hãy đọc kỹ đoạn mô tả bệnh cảnh bên dưới và trích xuất danh sách TRIỆU CHỨNG lâm sàng có giá trị chẩn đoán.
+Dưới đây là mô tả bệnh cảnh của một bệnh nhân, bao gồm hỏi bệnh, triệu chứng và dấu hiệu lâm sàng:
 
-✅ YÊU CẦU:
-- Mỗi triệu chứng viết trên một dòng riêng.
-- KHÔNG đánh số, KHÔNG giải thích.
-- Không viết lại đoạn mô tả.
+"""
+${rawText}
+"""
 
-📌 Đoạn mô tả bệnh:
-"""${rawText}"""
+🎯 YÊU CẦU:
+
+1. Dựa trên mô tả trên, hãy xác định **hội chứng Y học cổ truyền phù hợp nhất** (có thể là 1 hoặc nhiều hội chứng phối hợp).
+2. Với mỗi hội chứng, nêu tên hội chứng và giải thích ngắn gọn lý do chọn (triệu chứng nào dẫn đến hội chứng đó).
+3. Trả kết quả dưới dạng JSON như sau:
+
+[
+  {
+    "syndrome": "Tên hội chứng",
+    "reason": "Giải thích ngắn gọn: triệu chứng nào khớp với hội chứng này"
+  }
+]
+
+❗ KHÔNG thêm lời bình luận, KHÔNG giải thích ngoài mảng JSON.
+❗ KHÔNG ghi 'có thể là', hãy trả lời dứt khoát hội chứng nào là hợp lý nhất theo mô tả trên.
 `.trim();
 
-  const res1 = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    body: JSON.stringify({ prompt: symptomPrompt })
-  });
-  const text1 = await res1.text();
-
-  const rawSymptoms = text1
-    .split("\n")
-    .map(s => s.trim())
-    .filter(s => s.length > 1);
-
-  if (!rawSymptoms.length) {
-    outputBox.value = "⚠️ GPT không tách được triệu chứng nào.";
-    return;
-  }
-
-  // 2. GPT tạo keywordMap
- const keywordPrompt = `
-Bạn là chuyên gia Y học cổ truyền.
-🎯 Nhiệm vụ: Với mỗi triệu chứng bên dưới, hãy trả về đúng 3 từ khóa tương đương, gồm:
-- 1 từ khóa là **triệu chứng gốc** (giữ nguyên)
-- 1 từ khóa là từ **Hán Việt đồng nghĩa** (nếu có)
-- 1 từ khóa là từ **đồng nghĩa thông dụng khác** (nếu có)
-❌ Tuyệt đối KHÔNG được suy diễn nguyên nhân, bệnh danh, cơ chế bệnh sinh.
-📌 Trả kết quả ở dạng JSON như sau:
-{
-  "triệu chứng A": ["triệu chứng A", "từ Hán Việt", "từ đồng nghĩa"],
-  "triệu chứng B": ["triệu chứng B", "từ Hán Việt", "từ đồng nghĩa"]
-}
-✳️ Nếu không tìm được từ đồng nghĩa hoặc Hán Việt phù hợp, hãy lặp lại triệu chứng đó.
-✳️ Không thêm lời giải thích, không dùng phiên âm pinyin.
-📋 Danh sách triệu chứng:
-${rawSymptoms.join("\n")}
-`.trim();
-
-  const res2 = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    body: JSON.stringify({ prompt: keywordPrompt })
-  });
-  
-  let keywordMap = {};
-try {
-  const gptJson = await res2.json();
-  let content = gptJson.choices?.[0]?.message?.content || "";
-
-  if (content.startsWith("```")) {
-    content = content.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
-  }
-
-  keywordMap = JSON.parse(content);
-  console.log("✅ keywordMap:", keywordMap);
-} catch (err) {
-  outputBox.value = "❌ Lỗi khi phân tích JSON trả về từ GPT.";
-  console.error("Lỗi JSON GPT:", err, "\nNội dung trả về:", content);
-  return;
-}
-
-  // 3. Xây dựng danh sách hội chứng và triệu chứng khớp
-  const matrix = window.syndromeSymptomMatrix;
-  const tcmDefs = window.tcmSyndromes;
-  const allSymptoms = Object.keys(keywordMap);
-
-  const uncovered = new Set(allSymptoms);
-  const selectedSyndromes = [];
-
-  const syndromeCoverage = {};
-console.log("✅ keywordMap:", keywordMap);
-console.log("✅ matrix.syndromes:", matrix?.syndromes);
-console.log("✅ matrix.symptoms:", matrix?.symptoms);
-
-  for (let syndromeName of matrix.syndromes) {
-    const relatedSymptoms = matrix.symptoms?.[syndromeName] || [];
-    const explained = [];
-
-    for (let [rawSymptom, keywords] of Object.entries(keywordMap)) {
-      if (!Array.isArray(keywords)) {
-        console.warn(`⚠️ keywords for symptom "${rawSymptom}" is not array:`, keywords);
-        continue;
-      }
-
-      function normalize(str) {
-  return str.toLowerCase()
-            .normalize("NFD") // tách dấu
-            .replace(/[\u0300-\u036f]/g, "") // xóa dấu
-            .replace(/[^\p{L}\p{N}\s]/gu, "") // chỉ giữ lại chữ và số Unicode
-            .trim();
-}
-
-for (let kw of keywords) {
-  const kwNorm = normalize(kw);
-
-  if (relatedSymptoms.some(s => {
-    const sNorm = normalize(s);
-    return sNorm.includes(kwNorm) || kwNorm.includes(sNorm);  // So khớp 2 chiều
-  })) {
-    explained.push(rawSymptom);
-    break;
-  }
-}
-    }
-
-    if (explained.length > 0) {
-      syndromeCoverage[syndromeName] = new Set(explained);
-    }
-  }
-
- let usedSetCoverLogic = false;
-
-// ⚙️ Giai đoạn 1: Tối ưu bao phủ triệu chứng (set cover greedy)
-while (uncovered.size > 0 && selectedSyndromes.length < 5) {
-  let bestSyndrome = null;
-  let bestNewCoverage = [];
-
-  for (let [syndrome, explainedSet] of Object.entries(syndromeCoverage)) {
-    const newlyCovered = [...explainedSet].filter(sym => uncovered.has(sym));
-    if (newlyCovered.length > bestNewCoverage.length) {
-      bestNewCoverage = newlyCovered;
-      bestSyndrome = syndrome;
-    }
-  }
-
-  if (!bestSyndrome || bestNewCoverage.length === 0) {
-    break; // Dừng nếu không còn hội chứng nào giúp bao phủ thêm
-  }
-
-  selectedSyndromes.push({
-    syndrome: bestSyndrome,
-    definition: tcmDefs.find(s => s.name === bestSyndrome)?.definition || "Không có mô tả.",
-    matchedSymptoms: [...syndromeCoverage[bestSyndrome]]
-  });
-
-  bestNewCoverage.forEach(sym => uncovered.delete(sym));
-  delete syndromeCoverage[bestSyndrome];
-  usedSetCoverLogic = true;
-}
-
-// ⚙️ Giai đoạn 2: Nếu không hội chứng nào được chọn → fallback lấy toàn bộ hội chứng khớp ≥ 1 triệu chứng
-if (!usedSetCoverLogic || selectedSyndromes.length === 0) {
-  selectedSyndromes.length = 0; // Xoá các hội chứng cũ (nếu có)
-  for (let [syndromeName, explainedSet] of Object.entries(syndromeCoverage)) {
-    selectedSyndromes.push({
-      syndrome: syndromeName,
-      definition: tcmDefs.find(s => s.name === syndromeName)?.definition || "Không có mô tả.",
-      matchedSymptoms: [...explainedSet]
+  try {
+    const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      body: JSON.stringify({ prompt })
     });
+
+    let gptText = await res.text();
+    if (gptText.startsWith("```")) {
+      gptText = gptText.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
+    }
+
+    let classicSyndromes = [];
+    try {
+      classicSyndromes = JSON.parse(gptText);
+    } catch (err) {
+      outputBox.value = "❌ GPT trả về JSON không hợp lệ.";
+      console.error("❌ Lỗi JSON:", err, "\nGPT trả:", gptText);
+      return;
+    }
+
+    if (!Array.isArray(classicSyndromes) || classicSyndromes.length === 0) {
+      outputBox.value = "⚠️ GPT không xác định được hội chứng phù hợp.";
+      return;
+    }
+
+    const outputText = classicSyndromes.map(r =>
+      `📌 Hội chứng: ${r.syndrome}
+🔍 Lý do: ${r.reason}`
+    ).join("\n\n");
+
+    outputBox.value = outputText;
+
+    data.steps = data.steps || {};
+    data.steps.step3 = {
+      classic: classicSyndromes
+    };
+    localStorage.setItem("currentData", JSON.stringify(data));
+
+  } catch (err) {
+    outputBox.value = "❌ Lỗi khi gọi GPT API.";
+    console.error("❌ Lỗi khi gọi GPT API:", err);
   }
-}
-
-  const outputText = selectedSyndromes.map(r =>
-    `📌 Hội chứng: ${r.syndrome}
-🧾 Mô tả: ${r.definition}
-✅ Giải thích được: ${r.matchedSymptoms.join(", ")}
-
-`
-  ).join("\n");
-
-  outputBox.value = outputText || "⚠️ Không tìm thấy hội chứng phù hợp.";
-
-  data.steps = data.steps || {};
-  data.steps.step3 = {
-    selected: selectedSyndromes,
-    keywordMap: keywordMap
-  };
-  localStorage.setItem("currentData", JSON.stringify(data));
 }
 
 async function autoGenerateDiagnosticTree() {
