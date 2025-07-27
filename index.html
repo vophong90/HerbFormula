@@ -1282,6 +1282,7 @@ const borderColors = enrichedData.map(d =>
     window.herbChartInstance.destroy();
   }
 
+ requestAnimationFrame(() => {
   window.herbChartInstance = new Chart(ctx, {
     type: "bar",
     data: {
@@ -1323,6 +1324,7 @@ const borderColors = enrichedData.map(d =>
       }
     }
   });
+});
 }
 
 function renderFinalGPTFormula() {
