@@ -911,17 +911,14 @@ ${rawText}
 
 1. Dựa trên mô tả trên, hãy xác định **hội chứng Y học cổ truyền phù hợp nhất** (có thể là 1 hoặc nhiều hội chứng phối hợp).
 2. Với mỗi hội chứng, nêu tên hội chứng và giải thích ngắn gọn lý do chọn (triệu chứng nào dẫn đến hội chứng đó).
-3. Trả kết quả dưới dạng JSON như sau:
+3. Trình bày kết quả như sau (chỉ văn bản, không mã hóa, không JSON):
 
-[
-  {
-    "syndrome": "Tên hội chứng",
-    "reason": "Giải thích ngắn gọn: triệu chứng nào khớp với hội chứng này"
-  }
-]
+📌 Hội chứng: ...
+🔍 Lý do: ...
+📌 Hội chứng: ...
+🔍 Lý do: ...
 
-❗Chỉ trả về JSON.stringify(...) của kết quả trên, không thêm bất kỳ nội dung nào khác.
-❗Nếu không chắc chắn, vẫn hãy chọn hội chứng gần nhất có thể suy luận được.
+❗Không thêm bất kỳ phần mở đầu, lời giải thích nào ngoài kết quả.
 `.trim();
 
   try {
@@ -930,61 +927,19 @@ ${rawText}
       body: JSON.stringify({ prompt })
     });
 
-    let gptText = await res.text();
-    if (gptText.startsWith("```")) {
-      gptText = gptText.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
-    }
- 
-   let classicSyndromes = [];
+    const gptText = await res.text();
 
-try {
-  // 1. Gỡ ```json``` nếu có
-  const match = gptText.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (match) {
-    gptText = match[1].trim();
-  }
-
-  let parsedText = gptText.trim();
-  let firstParse;
-
-  try {
-    // 2. Thử parse thẳng (trong trường hợp JSON chuẩn)
-    classicSyndromes = JSON.parse(parsedText);
-  } catch (e1) {
-    try {
-      // 3. Nếu lỗi, thử parse 2 lần (escape string bị thiếu dấu " bên ngoài)
-      firstParse = JSON.parse(`"${parsedText.replace(/"/g, '\\"')}"`); // ép thành chuỗi JSON
-      classicSyndromes = JSON.parse(firstParse);
-    } catch (e2) {
-      throw new Error("Không thể parse dữ liệu dù đã thử 2 cách.");
-    }
-  }
-
-  if (!Array.isArray(classicSyndromes)) {
-    throw new Error("Kết quả không phải là mảng hợp lệ.");
-  }
-
-} catch (err) {
-  outputBox.value = "❌ GPT trả về JSON không hợp lệ.";
-  console.error("❌ Lỗi JSON:", err, "\n📥 GPT trả:", gptText);
-  return;
-}
-
-    if (!Array.isArray(classicSyndromes) || classicSyndromes.length === 0) {
+    if (!gptText.trim()) {
       outputBox.value = "⚠️ GPT không xác định được hội chứng phù hợp.";
       return;
     }
 
-    const outputText = classicSyndromes.map(r =>
-      `📌 Hội chứng: ${r.syndrome}
-🔍 Lý do: ${r.reason}`
-    ).join("\n\n");
+    outputBox.value = gptText.trim();
 
-    outputBox.value = outputText;
-
+    // Vẫn lưu vào localStorage để truy cập lại nếu cần
     data.steps = data.steps || {};
     data.steps.step3 = {
-      classic: classicSyndromes
+      classic: gptText.trim()
     };
     localStorage.setItem("currentData", JSON.stringify(data));
 
