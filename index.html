@@ -984,6 +984,9 @@ try {
   const selectedSyndromes = [];
 
   const syndromeCoverage = {};
+console.log("✅ keywordMap:", keywordMap);
+console.log("✅ matrix.syndromes:", matrix?.syndromes);
+console.log("✅ matrix.symptoms:", matrix?.symptoms);
 
   for (let syndromeName of matrix.syndromes) {
     const relatedSymptoms = matrix.symptoms?.[syndromeName] || [];
