@@ -212,7 +212,9 @@
   <div class="mt-4">
   <label for="effectSelector" class="font-semibold">🧪 Chọn pháp trị để xem biểu đồ vị thuốc:</label>
   <select id="effectSelector" class="border rounded px-2 py-1 mt-1"></select>
-  <canvas id="herbBarChart" height="300" class="mt-4 w-full"></canvas>
+  <div id="herbChartWrapper" class="overflow-x-auto">
+    <canvas id="herbBarChart" height="300"></canvas>
+  </div>
 </div>
   
 <!-- 4. Mô hình 6S -->
@@ -1249,30 +1251,44 @@ function drawHerbBarChart(effect) {
   const labels = data.map(d => d.vietnamese);
   const scores = data.map(d => d.score);
 
-  const ctx = document.getElementById("herbBarChart").getContext("2d");
+  const canvas = document.getElementById("herbBarChart");
+  const wrapper = document.getElementById("herbChartWrapper");
 
-  // Xóa biểu đồ cũ nếu có
-  if (herbChartInstance) {
-    herbChartInstance.destroy();
+  // ✅ Tính chiều rộng động: mỗi cột ~60px, cộng thêm khoảng cách
+  const columnWidth = 60;
+  const chartWidth = labels.length * columnWidth;
+  canvas.width = chartWidth;
+
+  const ctx = canvas.getContext("2d");
+
+  if (window.herbChartInstance) {
+    window.herbChartInstance.destroy();
   }
 
-  herbChartInstance = new Chart(ctx, {
+  window.herbChartInstance = new Chart(ctx, {
     type: "bar",
     data: {
       labels: labels,
       datasets: [{
-        label: "Điểm mạnh của vị thuốc (score)",
+        label: "Điểm mạnh (score)",
         data: scores,
         backgroundColor: "rgba(54, 162, 235, 0.6)",
         borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 1
+        borderWidth: 1,
+        barThickness: 40 // ✅ luôn giữ cột nhỏ gọn
       }]
     },
     options: {
-      indexAxis: 'y',
+      responsive: false, // ✅ quan trọng để dùng width tự động
+      maintainAspectRatio: false,
       scales: {
-        x: { beginAtZero: true },
-        y: { ticks: { autoSkip: false } }
+        x: {
+          beginAtZero: true,
+          ticks: { autoSkip: false }
+        },
+        y: {
+          beginAtZero: true
+        }
       },
       plugins: {
         legend: { display: false },
@@ -1288,6 +1304,7 @@ function drawHerbBarChart(effect) {
     }
   });
 }
+
 
 
 
