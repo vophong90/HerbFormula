@@ -1250,21 +1250,27 @@ function drawHerbBarChart(effect) {
 
   // ✅ Chuyển tứ khí thành màu sắc
   function tukhiToColor(tukhi) {
-    if (tukhi == null) return "white";
-    const clamped = Math.max(-5, Math.min(5, tukhi));
-    const norm = (clamped + 5) / 10;
-    const red = Math.round(255 * norm);
-    const green = 255 - red;
-    return `rgb(${red}, ${green}, ${255 - red})`; // xanh <–> đỏ
+  if (tukhi == null || tukhi === 0) return "white";
+
+  const abs = Math.min(5, Math.abs(tukhi)); // Giới hạn độ mạnh từ 0–5
+  const intensity = Math.round((abs / 5) * 200 + 55); // Sáng từ 55–255
+
+  if (tukhi > 0) {
+    // Dương → đỏ tươi
+    return `rgb(${intensity}, 60, 60)`;
+  } else {
+    // Âm → xanh ngọc
+    return `rgb(60, ${intensity}, ${intensity})`;
   }
+}
 
-  const backgroundColors = enrichedData.map(d =>
-    d.tukhi == null ? "white" : tukhiToColor(d.tukhi)
-  );
+const backgroundColors = enrichedData.map(d =>
+  tukhiToColor(d.tukhi)
+);
 
-  const borderColors = enrichedData.map(d =>
-    d.tukhi == null ? "rgba(54, 162, 235, 1)" : "black"
-  );
+const borderColors = enrichedData.map(d =>
+  d.tukhi == null || d.tukhi === 0 ? "rgba(54, 162, 235, 1)" : "black"
+);
 
   // Xóa biểu đồ cũ nếu có
   if (window.herbChartInstance) {
