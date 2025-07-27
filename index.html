@@ -1221,7 +1221,8 @@ function setupHerbBarChartUI() {
 }
 
   let herbChartInstance;
-function drawHerbBarChart(effect) {
+
+  function drawHerbBarChart(effect) {
   const data = window.herbsByEffect?.[effect] || [];
 
   const labels = data.map(d => d.vietnamese);
@@ -1233,98 +1234,104 @@ function drawHerbBarChart(effect) {
   // ✅ Tính chiều rộng dựa trên số lượng cột
   const columnWidth = 60;
   const chartWidth = Math.max(400, labels.length * columnWidth);
+
+  // ✅ Xoá ảnh hưởng CSS và set kích thước thật
+  canvas.style.width = ""; // huỷ mọi style.width trước đó
   canvas.width = chartWidth;
   canvas.height = 300;
-  
-  // Tìm dữ liệu herbalData theo tên tiếng Việt
+
+  // ✅ Làm sạch canvas trước khi vẽ
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // ✅ Bổ sung dữ liệu từ herbalData
   const enrichedData = data.map(d => {
     const matched = window.herbalData.find(h => h.herb === d.vietnamese);
     return {
       ...d,
       tukhi: matched?.tukhi ?? null,
-      sd_dose: matched?.sd_dose ?? null
+      sd_dose: matched?.sd_dose ?? null,
+      latin: matched?.latin ?? null
     };
   });
 
-  // ✅ Chuyển tứ khí thành màu sắc
- function tukhiToColor(tukhi) {
-  if (tukhi == null) return "white";
+  // ✅ Hàm chuyển tứ khí thành màu sắc
+  function tukhiToColor(tukhi) {
+    if (tukhi == null) return "white";
+    const colors = [
+      "#2c7bb6", // Đại Hàn
+      "#00a6ca", // Hàn
+      "#00ccbc", // Lương
+      "#ffffbf", // Bình
+      "#fdae61", // Ôn
+      "#f46d43", // Nhiệt
+      "#d73027"  // Đại Nhiệt
+    ];
+    if (tukhi <= -3.5) return colors[0];
+    if (tukhi <= -2)   return colors[1];
+    if (tukhi <= -0.5) return colors[2];
+    if (tukhi < 0.5)   return colors[3];
+    if (tukhi < 2)     return colors[4];
+    if (tukhi < 3.5)   return colors[5];
+    return colors[6];
+  }
 
-  const colors = [
-    "#2c7bb6", // Đại Hàn
-    "#00a6ca", // Hàn
-    "#00ccbc", // Lương
-    "#ffffbf", // Bình
-    "#fdae61", // Ôn
-    "#f46d43", // Nhiệt
-    "#d73027"  // Đại Nhiệt
-  ];
+  const backgroundColors = enrichedData.map(d =>
+    d.tukhi == null ? "white" : tukhiToColor(d.tukhi)
+  );
 
-  if (tukhi <= -3.5) return colors[0];
-  if (tukhi <= -2)   return colors[1];
-  if (tukhi <= -0.5) return colors[2];
-  if (tukhi < 0.5)   return colors[3];
-  if (tukhi < 2)     return colors[4];
-  if (tukhi < 3.5)   return colors[5];
-  return colors[6];
-}
+  const borderColors = enrichedData.map(d =>
+    d.tukhi == null ? "#cccccc" : "black"
+  );
 
-const backgroundColors = enrichedData.map(d =>
-  d.tukhi == null ? "white" : tukhiToColor(d.tukhi)
-);
-
-const borderColors = enrichedData.map(d =>
-  d.tukhi == null ? "#cccccc" : "black"
-);
-
-  // Xóa biểu đồ cũ nếu có
+  // ✅ Huỷ biểu đồ cũ nếu có
   if (window.herbChartInstance) {
     window.herbChartInstance.destroy();
   }
 
- requestAnimationFrame(() => {
-  window.herbChartInstance = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: labels,
-      datasets: [{
-        label: "Điểm mạnh (score)",
-        data: scores,
-        backgroundColor: backgroundColors,
-        borderColor: borderColors,
-        borderWidth: 2,
-        barThickness: 40
-      }]
-    },
-    options: {
-      responsive: false,
-      maintainAspectRatio: false,
-      scales: {
-        x: {
-          ticks: { autoSkip: false },
-          grid: { display: false }
-        },
-        y: {
-          beginAtZero: true,
-          grid: { display: true }
-        }
+  // ✅ Delay để đảm bảo canvas cập nhật xong mới vẽ
+  requestAnimationFrame(() => {
+    window.herbChartInstance = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Điểm mạnh (score)",
+          data: scores,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 2,
+          barThickness: 40
+        }]
       },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: function(ctx) {
-              const herb = enrichedData[ctx.dataIndex];
-              const latin = herb.latin || "–";
-              const dose = herb.sd_dose != null ? `${herb.sd_dose}g` : "Không rõ liều";
-              return `${herb.vietnamese} (${latin}):\nĐiểm: ${herb.score}, Liều: ${dose}`;
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: { autoSkip: false },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { display: true }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const herb = enrichedData[ctx.dataIndex];
+                const latin = herb.latin || "–";
+                const dose = herb.sd_dose != null ? `${herb.sd_dose}g` : "Không rõ liều";
+                return `${herb.vietnamese} (${latin}):\nĐiểm: ${herb.score}, Liều: ${dose}`;
+              }
             }
           }
         }
       }
-    }
+    });
   });
-});
 }
 
 function renderFinalGPTFormula() {
