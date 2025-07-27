@@ -1231,19 +1231,16 @@ function setupHerbBarChartUI() {
   const canvas = document.getElementById("herbBarChart");
   const ctx = canvas.getContext("2d");
 
-  // ✅ Tính chiều rộng dựa trên số lượng cột
+  // ✅ Gán kích thước thật, loại bỏ ảnh hưởng CSS
   const columnWidth = 60;
   const chartWidth = Math.max(400, labels.length * columnWidth);
-
-  // ✅ Xoá ảnh hưởng CSS và set kích thước thật
-  canvas.style.width = ""; // huỷ mọi style.width trước đó
+  canvas.style.width = ""; // huỷ style
+  canvas.removeAttribute("style"); // huỷ hẳn nếu trước đó bị ép CSS
   canvas.width = chartWidth;
   canvas.height = 300;
+  ctx.clearRect(0, 0, canvas.width, canvas.height); // làm sạch vùng vẽ
 
-  // ✅ Làm sạch canvas trước khi vẽ
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // ✅ Bổ sung dữ liệu từ herbalData
+  // ✅ enrich dữ liệu
   const enrichedData = data.map(d => {
     const matched = window.herbalData.find(h => h.herb === d.vietnamese);
     return {
@@ -1254,17 +1251,11 @@ function setupHerbBarChartUI() {
     };
   });
 
-  // ✅ Hàm chuyển tứ khí thành màu sắc
   function tukhiToColor(tukhi) {
     if (tukhi == null) return "white";
     const colors = [
-      "#2c7bb6", // Đại Hàn
-      "#00a6ca", // Hàn
-      "#00ccbc", // Lương
-      "#ffffbf", // Bình
-      "#fdae61", // Ôn
-      "#f46d43", // Nhiệt
-      "#d73027"  // Đại Nhiệt
+      "#2c7bb6", "#00a6ca", "#00ccbc", "#ffffbf",
+      "#fdae61", "#f46d43", "#d73027"
     ];
     if (tukhi <= -3.5) return colors[0];
     if (tukhi <= -2)   return colors[1];
@@ -1283,12 +1274,11 @@ function setupHerbBarChartUI() {
     d.tukhi == null ? "#cccccc" : "black"
   );
 
-  // ✅ Huỷ biểu đồ cũ nếu có
   if (window.herbChartInstance) {
     window.herbChartInstance.destroy();
   }
 
-  // ✅ Delay để đảm bảo canvas cập nhật xong mới vẽ
+  // ✅ Gọi sau khi DOM đã cập nhật kích thước
   requestAnimationFrame(() => {
     window.herbChartInstance = new Chart(ctx, {
       type: "bar",
