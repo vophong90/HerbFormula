@@ -198,14 +198,14 @@
     <label class="font-semibold block mb-1">🔍 Các triệu chứng nổi bật (VAS cao):</label>
     <ul id="step4-top-symptom-list" class="list-disc list-inside text-gray-700"></ul>
   </div>
-  <!-- 2. Bài thuốc cổ phương -->
+  <!-- 2. Pháp trị -->
   <div class="mb-6 border-t pt-6">
-  <label class="font-semibold block mb-2">🤖 GPT gợi ý bài thuốc cổ phương:</label>
-  <button onclick="autoSuggestClassicFormula()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-3">
-    ⚙️ GPT gợi ý cổ phương
+  <label class="font-semibold block mb-2">🤖 GPT gợi ý pháp trị:</label>
+  <button onclick="autoSuggestMethod()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-3">
+    ⚙️ GPT gợi ý pháp trị
   </button>
-  <textarea id="classic-formula-gpt" rows="6" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
-            placeholder="GPT sẽ hiển thị bài thuốc tại đây..." readonly></textarea>
+  <textarea id="treatmethod-gpt" rows="6" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
+            placeholder="GPT sẽ hiển thị pháp trị phù hợp cho bệnh nhân tại đây..." readonly></textarea>
 </div>
 
 <!-- 3. Mô hình 6S -->
@@ -1146,21 +1146,20 @@ function populateStep4() {
   });
 }
 
-  // Gợi ý bài thuốc cổ phương
-  
-async function autoSuggestClassicFormula() {
+  // Gợi ý pháp trị YHCT
+  async function autoSuggestMethod() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
   const syndrome = data.steps?.step3?.final?.trim();
   const symptoms = data.steps?.step2?.symptoms || [];
 
-  const outputBoxClassicFormula = document.getElementById("classic-formula-gpt");
+  const outputBox = document.getElementById("treatmethod-gpt");
 
   if (!syndrome || symptoms.length === 0) {
-    outputBoxClassicFormula.value = "⚠️ Thiếu dữ liệu hội chứng hoặc triệu chứng.";
+    outputBox.value = "⚠️ Thiếu dữ liệu hội chứng hoặc triệu chứng.";
     return;
   }
 
-  outputBoxClassicFormula.value = "⏳ Đang gợi ý bài thuốc, vui lòng chờ...";
+  outputBox.value = "⏳ Đang gợi ý pháp trị, vui lòng chờ...";
 
   const symptomList = symptoms
     .sort((a, b) => b.vas - a.vas)
@@ -1168,62 +1167,48 @@ async function autoSuggestClassicFormula() {
     .join("\n");
 
   const prompt = `
-Bạn là bác sĩ Y học cổ truyền. Dựa vào hội chứng chẩn đoán là: **${syndrome}** và danh sách triệu chứng có mức độ như sau:
+Bạn là chuyên gia Y học cổ truyền.
+
+Bệnh nhân được chẩn đoán theo YHCT là: **${syndrome}**
+
+Danh sách các triệu chứng đã ghi nhận, sắp xếp theo mức độ VAS:
 
 ${symptomList}
 
-Hãy gợi ý một bài thuốc cổ phương phù hợp nhất với hội chứng này. Bài thuốc cổ phương phải có thật 100%, không được tự sáng tạo ra bất cứ nội dung nào cả, vì liên quan đến tính mạng con người. Trình bày thông tin bài thuốc theo định dạng đầy đủ sau:
+Dựa trên chẩn đoán và triệu chứng, hãy xác định các pháp trị phù hợp theo nguyên tắc biện chứng luận trị. Pháp trị cần chia làm hai nhóm rõ ràng:
 
-🔸 **Tên bài thuốc:**  
-🔸 **Xuất xứ (sách nào):**  
-🔸 **Công năng:**  
-🔸 **Chủ trị:**  
-🔸 **Thành phần & liều lượng:**  
-🔸 **Cách dùng:**  
-🔸 **Lưu ý khi sử dụng (nếu có):**  
+🔹 **Trị bản** (nhằm điều trị cơ chế sinh bệnh, gốc rễ bệnh theo lý luận tạng phủ, khí huyết, tà chính, hư thực...).
 
-Chỉ chọn một bài thuốc cổ phương duy nhất, lý giải ngắn gọn vì sao phù hợp nếu cần. Chú ý dùng thuật ngữ chuyên ngành Trung y, ưu tiên giữ các thuật ngữ Hán Việt
+🔹 **Trị tiêu** (nhằm điều trị triệu chứng hiện tại đang gây khó chịu nhiều nhất).
+
+Yêu cầu:
+- Chỉ chọn trong các pháp trị chuẩn của Trung y, không được sáng tạo.
+- Ưu tiên trình bày bằng thuật ngữ Hán Việt.
+- Không viết thừa, không lan man.
+
+Trình bày kết quả như sau:
+
+🔸 **Trị bản:**  
+– Pháp trị: ...  
+– Lý do chọn pháp trị: ...
+
+🔸 **Trị tiêu:**  
+– Pháp trị: ...  
+– Lý do chọn pháp trị: ...
 `;
 
-const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ prompt: prompt })
-});
+  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ prompt: prompt })
+  });
 
   const result = await res.json();
   const reply = result.choices?.[0]?.message?.content || "❌ GPT không trả về kết quả.";
 
-  outputBoxClassicFormula.value = reply;
-}
-
-function saveStep4() {
-  const getVal = id => document.getElementById(id)?.value.trim() || "";
-
-  const key = localStorage.getItem("currentPatient");
-  if (!key) return alert("Chưa chọn hồ sơ!");
-
-  const data = JSON.parse(localStorage.getItem(key) || "{}");
-
-  data.steps = data.steps || {};
-  data.steps.step4 = {
-    gptClassicFormula: getVal("classic-formula-gpt"),
-    finalGPT: getVal("final-gpt-formula"),
-    finalDoctor: getVal("final-doctor-formula"),
-    sixs: {
-      source: getVal("sixs-source"),
-      symptom: getVal("sixs-symptom"),
-      site: getVal("sixs-site"),
-      strength: getVal("sixs-strength"),
-      sideeffect: getVal("sixs-sideeffect"),
-      secondary: getVal("sixs-secondary"),
-    }
-  };
-
-  localStorage.setItem(key, JSON.stringify(data));
-  localStorage.setItem("currentData", JSON.stringify(data));
+  outputBox.value = reply;
 }
 
 async function suggestSourceHerbsByGPT() {
