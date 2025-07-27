@@ -938,11 +938,11 @@ Hãy đọc kỹ đoạn mô tả bệnh cảnh bên dưới và trích xuất d
   const keywordPrompt = `
 Bạn là chuyên gia Y học cổ truyền.
 
-Hãy phân tích danh sách triệu chứng dưới đây và trả về 2 từ khóa liên quan đến mỗi triệu chứng, có thể là từ đồng nghĩa, từ Hán Việt, hoặc khái niệm tương đương dùng trong Y học cổ truyền Trung Hoa.
+Hãy phân tích danh sách triệu chứng dưới đây và trả về 3 từ khóa liên quan đến mỗi triệu chứng, có thể là từ đồng nghĩa, từ Hán Việt, hoặc khái niệm tương đương dùng trong Y học cổ truyền Trung Hoa, nhưng không lấy phiên âm pinyin.
 
 📌 YÊU CẦU:
-- Trả về kết quả ở dạng JSON chuẩn, mỗi triệu chứng là một khóa (key), giá trị là một mảng gồm 2 chuỗi.
-- KHÔNG thêm giải thích, KHÔNG lặp lại triệu chứng đầu vào.
+- Trả về kết quả ở dạng JSON chuẩn, mỗi triệu chứng là một khóa (key), giá trị là một mảng gồm 3 chuỗi.
+- KHÔNG thêm giải thích, có lặp lại triệu chứng đầu vào.
 - Đúng định dạng như sau:
 
 {
@@ -1283,7 +1283,7 @@ Bạn là bác sĩ Y học cổ truyền. Dựa vào hội chứng chẩn đoán
 
 ${symptomList}
 
-Hãy gợi ý một bài thuốc cổ phương phù hợp nhất với hội chứng này. Trình bày thông tin bài thuốc theo định dạng đầy đủ sau:
+Hãy gợi ý một bài thuốc cổ phương phù hợp nhất với hội chứng này. Bài thuốc cổ phương phải có thật 100%, không được tự sáng tạo ra bất cứ nội dung nào cả, vì liên quan đến tính mạng con người. Trình bày thông tin bài thuốc theo định dạng đầy đủ sau:
 
 🔸 **Tên bài thuốc:**  
 🔸 **Xuất xứ (sách nào):**  
