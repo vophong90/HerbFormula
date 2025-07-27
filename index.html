@@ -220,86 +220,97 @@
 </div>
 
 <!-- 4. Mô hình 6S -->
- <div class="mb-8">
-  <label class="font-semibold block mb-2">🔬 Mô hình 6S của bài thuốc:</label>
-   <div class="relative w-80 h-80 mx-auto mt-10 rounded-full">
-  <!-- Tooltip trung tâm -->
-  <div id="sixs-tooltip"
-       class="absolute inset-0 flex items-center justify-center text-center text-sm font-medium text-gray-800">
-    🌀 Rê chuột vào từng phần để xem mô tả
-  </div>
+<div class="flex flex-col items-center my-8">
+  <svg viewBox="0 0 300 300" width="300" height="300" class="mb-4">
+    <!-- Vòng tròn trung tâm -->
+    <circle cx="150" cy="150" r="60" fill="#0f2d3d" />
+    <text x="150" y="155" text-anchor="middle" font-size="24" fill="white" font-weight="bold">6S</text>
 
-  <!-- 6 phần hình quạt -->
-  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
-       style="transform: rotate(0deg); background-color: #3db9d3;"
-       onmouseenter="showTooltip('🟦 Source: Điều trị nguyên nhân')"></div>
+    <!-- S1 -->
+    <g onmouseenter="showTooltip('🟦 Source: Điều trị trực tiếp vào tác nhân gây bệnh')" onmouseleave="clearTooltip()">
+      <path d="M150,150 L150,0 A150,150 0 0,1 225,38 Z" fill="#3db9d3" />
+      <text x="180" y="40" font-size="10" text-anchor="middle" fill="white">Source</text>
+    </g>
 
-  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
-       style="transform: rotate(60deg); background-color: #f25d4e;"
-       onmouseenter="showTooltip('🟥 Site: Vị trí tác động đặc hiệu')"></div>
+    <!-- S2 -->
+    <g onmouseenter="showTooltip('🟨 Symptom: Điều trị triệu chứng chính của bệnh')" onmouseleave="clearTooltip()">
+      <path d="M150,150 L225,38 A150,150 0 0,1 262,112 Z" fill="#f9b233" />
+      <text x="255" y="90" font-size="10" text-anchor="middle" fill="white">Symptom</text>
+    </g>
 
-  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
-       style="transform: rotate(120deg); background-color: #fba937;"
-       onmouseenter="showTooltip('🟨 Symptom: Điều trị triệu chứng chính')"></div>
+    <!-- S3 -->
+    <g onmouseenter="showTooltip('🟥 Site: Tác động đặc hiệu tại vị trí bệnh')" onmouseleave="clearTooltip()">
+      <path d="M150,150 L262,112 A150,150 0 0,1 240,195 Z" fill="#ee5b3c" />
+      <text x="255" y="165" font-size="10" text-anchor="middle" fill="white">Site</text>
+    </g>
 
-  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
-       style="transform: rotate(180deg); background-color: #87b556;"
-       onmouseenter="showTooltip('🟩 Strength: Hiệu lực thuốc phù hợp bệnh')"></div>
+    <!-- S4 -->
+    <g onmouseenter="showTooltip('🟩 Strength: Chọn vị thuốc phù hợp với mức độ bệnh')" onmouseleave="clearTooltip()">
+      <path d="M150,150 L240,195 A150,150 0 0,1 150,300 Z" fill="#9dc83c" />
+      <text x="200" y="265" font-size="10" text-anchor="middle" fill="white">Strength</text>
+    </g>
 
-  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
-       style="transform: rotate(240deg); background-color: #6b3fa0;"
-       onmouseenter="showTooltip('🟪 Secondary prevention: Dự phòng tiến triển')"></div>
+    <!-- S5 -->
+    <g onmouseenter="showTooltip('🟧 Side-effect: Hạn chế tác dụng phụ của thuốc khác')" onmouseleave="clearTooltip()">
+      <path d="M150,150 L150,300 A150,150 0 0,1 60,240 Z" fill="#f57f45" />
+      <text x="110" y="265" font-size="10" text-anchor="middle" fill="white">Side-effect</text>
+    </g>
 
-  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
-       style="transform: rotate(300deg); background-color: #fc8955;"
-       onmouseenter="showTooltip('🟧 Side-effect: Ngăn tác dụng phụ của thuốc')"></div>
+    <!-- S6 -->
+    <g onmouseenter="showTooltip('🟪 Secondary prevention: Ngăn tiến triển bệnh về sau')" onmouseleave="clearTooltip()">
+      <path d="M150,150 L60,240 A150,150 0 0,1 75,75 Z" fill="#6a3fa0" />
+      <text x="85" y="110" font-size="10" text-anchor="middle" fill="white">Secondary</text>
+    </g>
+  </svg>
+
+  <!-- Tooltip hiển thị -->
+  <div id="sixs-tooltip" class="text-sm text-gray-800 font-semibold text-center min-h-[1.5rem]"></div>
 </div>
 
+<!-- 🔽 Các ô nhập liệu 6S -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+  <div>
+    <label class="font-semibold">S1 – Source:</label>
+    <textarea id="sixs-source" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
+  </div>
+
+  <div>
+    <label class="font-semibold">S2 – Symptom:</label>
+    <textarea id="sixs-symptom" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
+  </div>
+
+  <div>
+    <label class="font-semibold">S3 – Site:</label>
+    <textarea id="sixs-site" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
+  </div>
+
+  <div>
+    <label class="font-semibold">S4 – Strength:</label>
+    <textarea id="sixs-strength" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
+  </div>
+
+  <div>
+    <label class="font-semibold">S5 – Side-effect:</label>
+    <textarea id="sixs-sideeffect" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
+  </div>
+
+  <div>
+    <label class="font-semibold">S6 – Secondary Prevention:</label>
+    <textarea id="sixs-secondary" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
+  </div>
+</div>
+
+<!-- 🔧 Script xử lý tooltip -->
 <script>
   function showTooltip(text) {
     document.getElementById("sixs-tooltip").textContent = text;
   }
+
+  function clearTooltip() {
+    document.getElementById("sixs-tooltip").textContent = "";
+  }
 </script>
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-
-    <!-- S1 -->
-    <div>
-      <label class="font-semibold">S1 – Source:</label>
-      <textarea id="sixs-source" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
-    </div>
-
-    <!-- S2 -->
-    <div>
-      <label class="font-semibold">S2 – Symptom:</label>
-      <textarea id="sixs-symptom" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
-    </div>
-
-    <!-- S3 -->
-    <div>
-      <label class="font-semibold">S3 – Site:</label>
-      <textarea id="sixs-site" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
-    </div>
-
-    <!-- S4 -->
-    <div>
-      <label class="font-semibold">S4 – Strength:</label>
-      <textarea id="sixs-strength" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
-    </div>
-
-    <!-- S5 -->
-    <div>
-      <label class="font-semibold">S5 – Side-effect:</label>
-      <textarea id="sixs-sideeffect" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
-    </div>
-
-    <!-- S6 -->
-    <div>
-      <label class="font-semibold">S6 – Secondary Prevention:</label>
-      <textarea id="sixs-secondary" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
-    </div>
-
-  </div>
-</div>
 
 <!-- 5. Toa tổng hợp -->
 <div class="mb-6 border-t pt-6 mt-6">
