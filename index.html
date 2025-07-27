@@ -210,14 +210,19 @@
     </div>
 
     <!-- Tra cứu đối dược -->
-    <div>
-      <label for="keyword-doiduoc" class="block font-semibold mb-1">🔍 Nhập từ khóa để tra cứu đối dược:</label>
-      <input type="text" id="keyword-doiduoc" class="w-full border rounded px-3 py-2 mb-3" placeholder="Ví dụ: Đau lưng, Thoái hóa khớp...">
-      
-      <label for="result-doiduoc" class="block font-semibold mb-1">📋 Kết quả tra cứu:</label>
-      <textarea id="result-doiduoc" rows="6" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
-        placeholder="Kết quả sẽ hiển thị tại đây..." readonly></textarea>
-    </div>
+   <div>
+  <label for="keyword-doiduoc" class="block font-semibold mb-1">🔍 Nhập từ khóa để tra cứu đối dược:</label>
+  <div class="flex space-x-2 mb-3">
+    <input type="text" id="keyword-doiduoc" class="flex-grow border rounded px-3 py-2" placeholder="Ví dụ: Đau lưng, Thoái hóa khớp...">
+    <button onclick="searchDoiDuocByKeyword()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+      🔎 Tra cứu
+    </button>
+  </div>
+
+  <label for="result-doiduoc" class="block font-semibold mb-1">📋 Kết quả tra cứu:</label>
+  <textarea id="result-doiduoc" rows="6" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
+    placeholder="Kết quả sẽ hiển thị tại đây..." readonly></textarea>
+</div>
 
   </div>
 </div>
@@ -1216,6 +1221,33 @@ Trình bày kết quả như sau:
   outputBox.value = reply;
 }
 
+  function searchDoiDuocByKeyword() {
+  const input = document.getElementById("keyword-doiduoc");
+  const keyword = input.value.trim().toLowerCase();
+  const resultBox = document.getElementById("result-doiduoc");
+
+  if (!keyword) {
+    resultBox.value = "⚠️ Vui lòng nhập từ khóa.";
+    return;
+  }
+
+  const keywords = keyword.split(/\s+/).filter(k => k); // tách từ
+
+  const matches = (window.doiDuocData || []).filter(item => {
+    const chutriText = item.chutri?.toLowerCase() || "";
+    return keywords.every(word => chutriText.includes(word));
+  });
+
+  if (matches.length === 0) {
+    resultBox.value = "❌ Không tìm thấy kết quả phù hợp.";
+    return;
+  }
+
+  resultBox.value = matches.map(item =>
+    `📌 Đối dược: ${item.doiduoc}\n📋 Chủ trị: ${item.chutri}`
+  ).join("\n\n");
+}
+  
 function setupHerbBarChartUI() {
   const select = document.getElementById("effectSelector");
   const effects = Object.keys(window.herbsByEffect || {});
