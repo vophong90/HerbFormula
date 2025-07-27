@@ -206,16 +206,18 @@
             placeholder="GPT sẽ hiển thị pháp trị phù hợp cho bệnh nhân tại đây..." readonly></textarea>
 </div>
 
- <!-- 3. Mô tả mức độ vị thuốc -->
-  <div class="mt-8 flex flex-col items-center">
-  <label for="effectSelector" class="font-semibold mb-2 text-center">🧪 Chọn pháp trị để xem biểu đồ vị thuốc:</label>
+<!-- 3. Mô tả mức độ vị thuốc -->
+<div class="mt-8 flex flex-col items-center">
+  <label for="effectSelector" class="font-semibold mb-2 text-center">
+    🧪 Chọn pháp trị để xem biểu đồ vị thuốc:
+  </label>
   <select id="effectSelector" class="border rounded px-2 py-1 mb-4"></select>
 
- <div id="herbChartWrapper" class="w-full overflow-x-auto">
-  <div class="inline-block min-w-fit mx-auto">
-    <canvas id="herbBarChart" height="300" style="display: block;"></canvas>
+  <div id="herbChartWrapper" class="w-full overflow-x-auto">
+    <div class="flex justify-center min-w-fit">
+      <canvas id="herbBarChart" height="300"></canvas>
+    </div>
   </div>
-</div>
 </div>
 
 <!-- 4. Các ô nhập liệu 6S có chú thích trực tiếp -->
@@ -1224,7 +1226,7 @@ function setupHerbBarChartUI() {
 
   let herbChartInstance;
 
-  function drawHerbBarChart(effect) {
+ function drawHerbBarChart(effect) {
   const data = window.herbsByEffect?.[effect] || [];
 
   const labels = data.map(d => d.vietnamese);
@@ -1233,16 +1235,19 @@ function setupHerbBarChartUI() {
   const canvas = document.getElementById("herbBarChart");
   const ctx = canvas.getContext("2d");
 
-  // ✅ Gán kích thước thật, loại bỏ ảnh hưởng CSS
+  // ✅ Huỷ biểu đồ cũ nếu có
+  if (window.herbChartInstance) {
+    window.herbChartInstance.destroy();
+  }
+
+  // ✅ Gán lại kích thước canvas theo số lượng cột
   const columnWidth = 60;
   const chartWidth = Math.max(400, labels.length * columnWidth);
-  canvas.style.width = ""; // huỷ style
-  canvas.removeAttribute("style"); // huỷ hẳn nếu trước đó bị ép CSS
-  canvas.width = chartWidth;
-  canvas.height = 300;
-  ctx.clearRect(0, 0, canvas.width, canvas.height); // làm sạch vùng vẽ
+  canvas.removeAttribute("style");
+  canvas.setAttribute("width", chartWidth);
+  canvas.setAttribute("height", 300);
 
-  // ✅ enrich dữ liệu
+  // ✅ enrich dữ liệu với thông tin từ herbalData
   const enrichedData = data.map(d => {
     const matched = window.herbalData.find(h => h.herb === d.vietnamese);
     return {
@@ -1253,6 +1258,7 @@ function setupHerbBarChartUI() {
     };
   });
 
+  // ✅ màu theo tukhi
   function tukhiToColor(tukhi) {
     if (tukhi == null) return "white";
     const colors = [
@@ -1276,12 +1282,10 @@ function setupHerbBarChartUI() {
     d.tukhi == null ? "#cccccc" : "black"
   );
 
-  if (window.herbChartInstance) {
-    window.herbChartInstance.destroy();
-  }
-
-  // ✅ Gọi sau khi DOM đã cập nhật kích thước
+  // ✅ Vẽ biểu đồ sau khi DOM ổn định
   requestAnimationFrame(() => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
     window.herbChartInstance = new Chart(ctx, {
       type: "bar",
       data: {
