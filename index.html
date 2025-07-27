@@ -1397,6 +1397,35 @@ function renderFinalGPTFormula() {
   if (outputBox) outputBox.value = finalFormula;
 }
 
+function saveStep4() {
+  const data = JSON.parse(localStorage.getItem("currentData") || "{}");
+
+  // Thu thập dữ liệu từ các ô 6S
+  const sixs = {
+    source: document.getElementById("sixs-source")?.value || "",
+    symptom: document.getElementById("sixs-symptom")?.value || "",
+    site: document.getElementById("sixs-site")?.value || "",
+    strength: document.getElementById("sixs-strength")?.value || "",
+    sideeffect: document.getElementById("sixs-sideeffect")?.value || "",
+    secondary: document.getElementById("sixs-secondary")?.value || ""
+  };
+
+  // Toa thuốc tổng hợp GPT và bác sĩ
+  const finalGPT = document.getElementById("final-gpt-formula")?.value || "";
+  const finalDoctor = document.getElementById("final-doctor-formula")?.value || "";
+
+  // Lưu lại vào localStorage
+  data.steps = data.steps || {};
+  data.steps.step4 = {
+    sixs: sixs,
+    finalGPT: finalGPT,
+    finalDoctor: finalDoctor
+  };
+
+  localStorage.setItem("currentData", JSON.stringify(data));
+  console.log("✅ Đã lưu dữ liệu bước 4.");
+}
+  
 //Hàm cho bước 5
 
 function populateStep5() {
