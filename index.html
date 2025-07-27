@@ -1233,7 +1233,8 @@ function drawHerbBarChart(effect) {
   // ✅ Tính chiều rộng dựa trên số lượng cột
   const columnWidth = 60;
   const chartWidth = Math.max(400, labels.length * columnWidth);
-  canvas.style.width = chartWidth + "px";
+  canvas.width = chartWidth;
+  canvas.height = 300;
   
   // Tìm dữ liệu herbalData theo tên tiếng Việt
   const enrichedData = data.map(d => {
