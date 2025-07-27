@@ -220,6 +220,31 @@
 </div>
 
 <!-- 4. Mô hình 6S -->
+  <!-- Vùng hiển thị ảnh mô hình 6S -->
+<div class="flex flex-col items-center mb-8">
+  <img src="6S_main.png" alt="Mô hình 6S" class="w-96 mb-4">
+  <div id="sixs-tooltip" class="text-sm text-gray-700 text-center h-12 transition-opacity duration-200"></div>
+</div>
+  <script>
+  const tooltip = document.getElementById("sixs-tooltip");
+
+  const explanations = {
+    "sixs-source": "🟦 S1 – Source: Cho các vị thuốc điều trị trực tiếp vào tác nhân gây bệnh.",
+    "sixs-symptom": "🟨 S2 – Symptom: Cho các vị thuốc điều trị triệu chứng than phiền chính của bệnh nhân.",
+    "sixs-site": "🟥 S3 – Site: Cho các vị thuốc có vị trí tác động đặc hiệu ngay vị trí bệnh.",
+    "sixs-strength": "🟩 S4 – Strength: Chọn vị thuốc có hiệu lực tương ứng với mức độ nặng của bệnh.",
+    "sixs-sideeffect": "🟧 S5 – Side-effect: Cho các vị thuốc làm giảm/mất tác dụng phụ do thuốc khác gây ra.",
+    "sixs-secondary": "🟪 S6 – Secondary prevention: Cho các vị thuốc cắt đứt con đường diễn tiến tiếp theo của bệnh."
+  };
+
+  Object.keys(explanations).forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener("mouseenter", () => tooltip.textContent = explanations[id]);
+    el.addEventListener("mouseleave", () => tooltip.textContent = "");
+  });
+</script>
+
 <div class="mb-8">
   <label class="font-semibold block mb-2">🔬 Mô hình 6S của bài thuốc:</label>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
