@@ -92,7 +92,7 @@ window.herbsByEffect = {
     { latin: "Lonicerae flos", vietnamese: "Kim ngân hoa", score: 6 },
     { latin: "Forsythiae fructus", vietnamese: "Liên kiều", score: 6 },
     { latin: "Isatidis radix", vietnamese: "Bản lam căn", score: 5 },
-    { latin: "Bambusae folium", vietnamese: "Thiên trúc diệp", score: 5 },
+    { latin: "Bambusae folium", vietnamese: "Trúc diệp", score: 5 },
     { latin: "Scrophulariae radix", vietnamese: "Huyền sâm", score: 5 },
     { latin: "Salviae miltiorrhizae radix", vietnamese: "Đan sâm", score: 5 }
   ],
@@ -169,7 +169,7 @@ window.herbsByEffect = {
     { latin: "Alismatis rhizoma", vietnamese: "Trạch tả", score: 7 },
     { latin: "Polyporus", vietnamese: "Trư linh", score: 6 },
     { latin: "Stephaniae radix", vietnamese: "Phòng kỷ", score: 5 },
-    { latin: "Talcum", vietnamese: "Hỏa thạch", score: 5 },
+    { latin: "Talcum", vietnamese: "Hoạt thạch", score: 5 },
     { latin: "Plantaginis semen", vietnamese: "Xa tiền tử", score: 6 },
     { latin: "Poria", vietnamese: "Phục linh", score: 6 },
     { latin: "Pyrrosiae folium", vietnamese: "Thạch vĩ", score: 5 },
@@ -255,7 +255,7 @@ window.herbsByEffect = {
   ],
   "Ôn Tỳ Vị, tán hàn": [
     { latin: "Zingiberis rhizoma", vietnamese: "Can khương", score: 6 },
-    { latin: "Zanthoxyli fructus", vietnamese: "Hỏa tiêu", score: 5 },
+    { latin: "Zanthoxyli fructus", vietnamese: "Xuyên tiêu", score: 5 },
     { latin: "Piperis longi fructus", vietnamese: "Tất bát", score: 5 },
     { latin: "Foeniculi fructus", vietnamese: "Tiểu hồi hương", score: 5 },
     { latin: "Alpiniae katsumadai semen", vietnamese: "Thảo đậu khấu", score: 5 },
@@ -421,7 +421,7 @@ window.herbsByEffect = {
     { latin: "Fritillariae bulbus", vietnamese: "Bối mẫu", score: 5 }
   ],
   "Hóa đàm nhuyễn kiên": [
-    { latin: "Arcae concha", vietnamese: "Ngoa lăng tử", score: 5 },
+    { latin: "Arcae concha", vietnamese: "Ngõa lăng tử", score: 5 },
     { latin: "Ostrea concha", vietnamese: "Mẫu lệ", score: 5 },
     { latin: "Sargassum", vietnamese: "Hải tảo", score: 5 },
     { latin: "Eckloniae thallus", vietnamese: "Côn bố", score: 5 },
