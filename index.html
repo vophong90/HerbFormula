@@ -2071,32 +2071,39 @@ function downloadCurrentDataAsJSON() {
   }
 </style>
 
-<script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const btn = document.getElementById("btn-render-tukhi");
-    if (btn) {
-      btn.addEventListener("click", renderChartTemperature);
-    } else {
-      console.warn("❌ Không tìm thấy nút 'Phân tích Tứ khí'.");
-    }
-  });
-
-  document.addEventListener("DOMContentLoaded", () => {
-    const btnFlavor = document.getElementById("btn-render-flavor");
-    btnFlavor.addEventListener("click", () => {
-      renderChartFlavor();
-    });
-  });
-
+  <script>
 document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("btn-render-meridian").addEventListener("click", renderChartMeridian);
-    document.getElementById("btn-render-flavor").addEventListener("click", renderChartFlavor);
-  });
-
-document.addEventListener("DOMContentLoaded", () => {
+  // 👉 Các nút vẽ biểu đồ Tứ khí, Ngũ vị, Kinh lạc, Phương hướng
+  document.getElementById("btn-render-tukhi")?.addEventListener("click", renderChartTemperature);
+  document.getElementById("btn-render-flavor")?.addEventListener("click", renderChartFlavor);
+  document.getElementById("btn-render-meridian")?.addEventListener("click", renderChartMeridian);
   document.getElementById("btn-render-direction")?.addEventListener("click", renderChartDirection);
-});
 
+  // 👉 Dropdown chọn pháp trị để vẽ biểu đồ vị thuốc
+  const selector = document.getElementById("effectSelector");
+  if (selector) {
+    const allEffects = Object.keys(window.herbsByEffect || {});
+    for (const effect of allEffects) {
+      const opt = document.createElement("option");
+      opt.value = effect;
+      opt.textContent = effect;
+      selector.appendChild(opt);
+    }
+
+    selector.addEventListener("change", e => {
+      drawHerbBarChart(e.target.value);
+    });
+
+    // ✅ Tự động vẽ biểu đồ đầu tiên
+    if (allEffects.length > 0) {
+      selector.value = allEffects[0];
+      drawHerbBarChart(allEffects[0]);
+    }
+  } else {
+    console.warn("⚠️ Không tìm thấy #effectSelector để gán dropdown pháp trị.");
+  }
+});
 </script>
+
 </body>
 </html>
