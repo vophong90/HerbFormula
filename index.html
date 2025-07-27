@@ -196,13 +196,30 @@
     <ul id="step4-top-symptom-list" class="list-disc list-inside text-gray-700"></ul>
   </div>
   
-  <!-- 2. Pháp trị -->
-  <div class="mb-6 border-t pt-6">
-  <button onclick="autoSuggestMethod()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-3">
-    ⚙️ GPT gợi ý pháp trị
-  </button>
-  <textarea id="treatmethod-gpt" rows="6" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
-            placeholder="GPT sẽ hiển thị pháp trị phù hợp cho bệnh nhân tại đây..." readonly></textarea>
+ <!-- 2. Pháp trị và Tra cứu đối dược -->
+<div class="mb-6 border-t pt-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    
+    <!-- GPT gợi ý pháp trị -->
+    <div>
+      <button onclick="autoSuggestMethod()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-3 w-full">
+        ⚙️ GPT gợi ý pháp trị
+      </button>
+      <textarea id="treatmethod-gpt" rows="6" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
+        placeholder="GPT sẽ hiển thị pháp trị phù hợp cho bệnh nhân tại đây..." readonly></textarea>
+    </div>
+
+    <!-- Tra cứu đối dược -->
+    <div>
+      <label for="keyword-doiduoc" class="block font-semibold mb-1">🔍 Nhập từ khóa để tra cứu đối dược:</label>
+      <input type="text" id="keyword-doiduoc" class="w-full border rounded px-3 py-2 mb-3" placeholder="Ví dụ: Đau lưng, Thoái hóa khớp...">
+      
+      <label for="result-doiduoc" class="block font-semibold mb-1">📋 Kết quả tra cứu:</label>
+      <textarea id="result-doiduoc" rows="6" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
+        placeholder="Kết quả sẽ hiển thị tại đây..." readonly></textarea>
+    </div>
+
+  </div>
 </div>
 
 <!-- 3. Mô tả mức độ vị thuốc -->
