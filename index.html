@@ -920,6 +920,9 @@ ${rawText}
   }
 ]
 
+❗ KHÔNG bọc trong dấu ```
+❗ KHÔNG escape ký tự, KHÔNG xuống dòng thừa
+❗ KHÔNG viết lời bình luận, KHÔNG thêm chữ nào ngoài JSON
 ❗ KHÔNG thêm lời bình luận, KHÔNG giải thích ngoài mảng JSON.
 ❗ Nếu không chắc chắn, vẫn hãy chọn hội chứng gần nhất có thể suy luận được.
 `.trim();
@@ -934,15 +937,21 @@ ${rawText}
     if (gptText.startsWith("```")) {
       gptText = gptText.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
     }
-  let classicSyndromes = [];
+ let classicSyndromes = [];
+
 try {
-  // Gỡ đoạn ```json ... ```
-  const match = gptText.match(/```json\s*([\s\S]*?)```/i);
+  const match = gptText.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (match) {
     gptText = match[1].trim();
   }
 
-  classicSyndromes = JSON.parse(gptText);
+  if (gptText.startsWith('"') || gptText.includes('\\"')) {
+    const firstParse = JSON.parse(gptText);       
+    classicSyndromes = JSON.parse(firstParse);    
+  } else {
+    classicSyndromes = JSON.parse(gptText);      
+  }
+
 } catch (err) {
   outputBox.value = "❌ GPT trả về JSON không hợp lệ.";
   console.error("❌ Lỗi JSON:", err, "\nGPT trả:", gptText);
