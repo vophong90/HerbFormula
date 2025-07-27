@@ -1017,29 +1017,47 @@ for (let kw of keywords) {
     }
   }
 
-  while (uncovered.size > 0 && selectedSyndromes.length < 5) {
-    let bestSyndrome = null;
-    let bestNewCoverage = [];
+ let usedSetCoverLogic = false;
 
-    for (let [syndrome, explainedSet] of Object.entries(syndromeCoverage)) {
-      const newlyCovered = [...explainedSet].filter(sym => uncovered.has(sym));
-      if (newlyCovered.length > bestNewCoverage.length) {
-        bestNewCoverage = newlyCovered;
-        bestSyndrome = syndrome;
-      }
+// ⚙️ Giai đoạn 1: Tối ưu bao phủ triệu chứng (set cover greedy)
+while (uncovered.size > 0 && selectedSyndromes.length < 5) {
+  let bestSyndrome = null;
+  let bestNewCoverage = [];
+
+  for (let [syndrome, explainedSet] of Object.entries(syndromeCoverage)) {
+    const newlyCovered = [...explainedSet].filter(sym => uncovered.has(sym));
+    if (newlyCovered.length > bestNewCoverage.length) {
+      bestNewCoverage = newlyCovered;
+      bestSyndrome = syndrome;
     }
-
-    if (!bestSyndrome) break;
-
-    selectedSyndromes.push({
-      syndrome: bestSyndrome,
-      definition: tcmDefs.find(s => s.name === bestSyndrome)?.definition || "Không có mô tả.",
-      matchedSymptoms: [...syndromeCoverage[bestSyndrome]]
-    });
-
-    bestNewCoverage.forEach(sym => uncovered.delete(sym));
-    delete syndromeCoverage[bestSyndrome];
   }
+
+  if (!bestSyndrome || bestNewCoverage.length === 0) {
+    break; // Dừng nếu không còn hội chứng nào giúp bao phủ thêm
+  }
+
+  selectedSyndromes.push({
+    syndrome: bestSyndrome,
+    definition: tcmDefs.find(s => s.name === bestSyndrome)?.definition || "Không có mô tả.",
+    matchedSymptoms: [...syndromeCoverage[bestSyndrome]]
+  });
+
+  bestNewCoverage.forEach(sym => uncovered.delete(sym));
+  delete syndromeCoverage[bestSyndrome];
+  usedSetCoverLogic = true;
+}
+
+// ⚙️ Giai đoạn 2: Nếu không hội chứng nào được chọn → fallback lấy toàn bộ hội chứng khớp ≥ 1 triệu chứng
+if (!usedSetCoverLogic || selectedSyndromes.length === 0) {
+  selectedSyndromes.length = 0; // Xoá các hội chứng cũ (nếu có)
+  for (let [syndromeName, explainedSet] of Object.entries(syndromeCoverage)) {
+    selectedSyndromes.push({
+      syndrome: syndromeName,
+      definition: tcmDefs.find(s => s.name === syndromeName)?.definition || "Không có mô tả.",
+      matchedSymptoms: [...explainedSet]
+    });
+  }
+}
 
   const outputText = selectedSyndromes.map(r =>
     `📌 Hội chứng: ${r.syndrome}
