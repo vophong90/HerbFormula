@@ -940,22 +940,26 @@ ${rawText}
    let classicSyndromes = [];
 
 try {
-  // Gỡ block ```json ... ```
+  // 1. Gỡ ```json``` nếu có
   const match = gptText.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (match) {
     gptText = match[1].trim();
   }
 
-  // Nếu là chuỗi bị stringify: bắt đầu bằng \n[ hoặc chứa nhiều \"
-  const looksLikeEscaped = gptText.includes('\\"') || gptText.includes('\\n') || gptText.startsWith('"[');
+  // 2. Nếu là chuỗi escape toàn bộ thì JSON.parse 2 lần
+  let parsedText = gptText.trim();
 
-  if (looksLikeEscaped) {
-    const firstParse = JSON.parse(gptText);       // parse thành chuỗi JSON thực
-    classicSyndromes = JSON.parse(firstParse);    // parse thành object thực
+  // Nếu chuỗi bắt đầu và kết thúc bằng dấu nháy kép và có \" bên trong
+  const isEscapedString = parsedText.startsWith('"') && parsedText.endsWith('"') && parsedText.includes('\\"');
+
+  if (isEscapedString) {
+    const firstParse = JSON.parse(parsedText);      // Bỏ escape => thành chuỗi JSON thật
+    classicSyndromes = JSON.parse(firstParse);      // Parse lần 2 => object thực
   } else {
-    classicSyndromes = JSON.parse(gptText);       // parse trực tiếp nếu đúng
+    classicSyndromes = JSON.parse(parsedText);      // Bình thường
   }
 
+  // 3. Kiểm tra chắc chắn là mảng
   if (!Array.isArray(classicSyndromes)) {
     throw new Error("Kết quả không phải mảng hội chứng hợp lệ.");
   }
