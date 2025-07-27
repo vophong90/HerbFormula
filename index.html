@@ -198,6 +198,7 @@
     <label class="font-semibold block mb-1">🔍 Các triệu chứng nổi bật (VAS cao):</label>
     <ul id="step4-top-symptom-list" class="list-disc list-inside text-gray-700"></ul>
   </div>
+  
   <!-- 2. Pháp trị -->
   <div class="mb-6 border-t pt-6">
   <label class="font-semibold block mb-2">🤖 GPT gợi ý pháp trị:</label>
@@ -209,77 +210,60 @@
 </div>
 
  <!-- 3. Mô tả mức độ vị thuốc -->
-  <div class="mt-4">
-  <label for="effectSelector" class="font-semibold">🧪 Chọn pháp trị để xem biểu đồ vị thuốc:</label>
-  <select id="effectSelector" class="border rounded px-2 py-1 mt-1"></select>
-  <div id="herbChartWrapper" class="overflow-x-auto">
+  <div class="mt-8 flex flex-col items-center">
+  <label for="effectSelector" class="font-semibold mb-2 text-center">🧪 Chọn pháp trị để xem biểu đồ vị thuốc:</label>
+  <select id="effectSelector" class="border rounded px-2 py-1 mb-4"></select>
+
+  <div id="herbChartWrapper" class="overflow-x-auto w-full flex justify-center">
     <canvas id="herbBarChart" height="300"></canvas>
   </div>
 </div>
-  
+
 <!-- 4. Mô hình 6S -->
-<div class="mb-6">
+<div class="mb-8">
   <label class="font-semibold block mb-2">🔬 Mô hình 6S của bài thuốc:</label>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
     <!-- S1 -->
     <div>
-      <label class="font-semibold flex items-center gap-2">
-        S1 – Source:
-        <button onclick="suggestSourceHerbsByGPT()" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">GPT Gợi ý</button>
-      </label>
+      <label class="font-semibold">S1 – Source:</label>
       <textarea id="sixs-source" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
     </div>
 
     <!-- S2 -->
     <div>
-      <label class="font-semibold flex items-center gap-2">
-        S2 – Symptom:
-        <button onclick="suggestSymptomHerbsByGPT()" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">GPT Gợi ý</button>
-      </label>
+      <label class="font-semibold">S2 – Symptom:</label>
       <textarea id="sixs-symptom" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
     </div>
 
     <!-- S3 -->
     <div>
-      <label class="font-semibold flex items-center gap-2">
-        S3 – Site:
-        <button onclick="suggestSiteHerbsByGPT()" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">GPT Gợi ý</button>
-      </label>
+      <label class="font-semibold">S3 – Site:</label>
       <textarea id="sixs-site" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
     </div>
 
     <!-- S4 -->
     <div>
-      <label class="font-semibold flex items-center gap-2">
-        S4 – Strength:
-        <button onclick="suggestStrengthDoseByGPT()" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">GPT Gợi ý</button>
-      </label>
+      <label class="font-semibold">S4 – Strength:</label>
       <textarea id="sixs-strength" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
     </div>
 
     <!-- S5 -->
     <div>
-      <label class="font-semibold flex items-center gap-2">
-        S5 – Side-effect:
-        <button onclick="suggestSideEffectModifiers()" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">GPT Gợi ý</button>
-      </label>
+      <label class="font-semibold">S5 – Side-effect:</label>
       <textarea id="sixs-sideeffect" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
     </div>
 
     <!-- S6 -->
     <div>
-      <label class="font-semibold flex items-center gap-2">
-        S6 – Secondary Prevention:
-        <button onclick="suggestSecondaryPrevention()" class="bg-green-600 text-white px-2 py-1 rounded text-sm hover:bg-green-700">GPT Gợi ý</button>
-      </label>
+      <label class="font-semibold">S6 – Secondary Prevention:</label>
       <textarea id="sixs-secondary" rows="2" class="w-full border rounded px-3 py-2 mt-1"></textarea>
     </div>
 
   </div>
 </div>
 
-<!-- 4. Toa tổng hợp -->
+<!-- 5. Toa tổng hợp -->
 <div class="mb-6 border-t pt-6 mt-6">
   <h3 class="text-lg font-semibold mb-2">🧾 Toa thuốc tổng hợp</h3>
 
