@@ -996,7 +996,11 @@ try {
       }
 
       function normalize(str) {
-  return str.toLowerCase().normalize("NFC").replace(/[^\w\s]/gi, "").trim();
+  return str.toLowerCase()
+            .normalize("NFD") // tách dấu
+            .replace(/[\u0300-\u036f]/g, "") // xóa dấu
+            .replace(/[^\p{L}\p{N}\s]/gu, "") // chỉ giữ lại chữ và số Unicode
+            .trim();
 }
 
 for (let kw of keywords) {
