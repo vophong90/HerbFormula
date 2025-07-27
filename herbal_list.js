@@ -291,7 +291,7 @@ window.herbalData = [
   },
   {
     "id": 11,
-    "herb": "Tô diệp",
+    "herb": "Tử tô diệp",
     "tukhi": 2.3,
     "chua": 0,
     "cay": 2,
@@ -1857,7 +1857,7 @@ window.herbalData = [
   },
   {
     "id": 65,
-    "herb": "Đơn bì",
+    "herb": "Mẫu đơn bì",
     "tukhi": -2.6,
     "chua": 0,
     "cay": 1,
@@ -1886,7 +1886,7 @@ window.herbalData = [
   },
   {
     "id": 66,
-    "herb": "Xích thược",
+    "herb": "Xích thược dược",
     "tukhi": -3.3,
     "chua": 0,
     "cay": 0,
@@ -1915,7 +1915,7 @@ window.herbalData = [
   },
   {
     "id": 67,
-    "herb": "Sinh địa",
+    "herb": "Sinh địa hoàng",
     "tukhi": -3.6,
     "chua": 0,
     "cay": 0,
@@ -3829,7 +3829,7 @@ window.herbalData = [
   },
   {
     "id": 133,
-    "herb": "Ý dĩ",
+    "herb": "Ý dĩ nhân",
     "tukhi": -2.6,
     "chua": 0,
     "cay": 0,
@@ -4235,7 +4235,7 @@ window.herbalData = [
   },
   {
     "id": 147,
-    "herb": "Bạch linh",
+    "herb": "Phục linh",
     "tukhi": -0.6,
     "chua": 0,
     "cay": 0,
@@ -4264,7 +4264,7 @@ window.herbalData = [
   },
   {
     "id": 148,
-    "herb": "Thạch vỹ",
+    "herb": "Thạch vĩ",
     "tukhi": -2.3,
     "chua": 0,
     "cay": 0,
@@ -4902,7 +4902,7 @@ window.herbalData = [
   },
   {
     "id": 170,
-    "herb": "Phụ tử",
+    "herb": "Chế phụ tử",
     "tukhi": 5.0,
     "chua": 0,
     "cay": 3,
@@ -8121,7 +8121,7 @@ window.herbalData = [
   },
   {
     "id": 281,
-    "herb": "Tô tử",
+    "herb": "Tử tô tử",
     "tukhi": 2.6,
     "chua": 0,
     "cay": 2,
@@ -9542,7 +9542,7 @@ window.herbalData = [
   },
   {
     "id": 330,
-    "herb": "Thỏ ty tử",
+    "herb": "Thố ti tử",
     "tukhi": 0.6,
     "chua": 0,
     "cay": 2,
@@ -9774,7 +9774,7 @@ window.herbalData = [
   },
   {
     "id": 338,
-    "herb": "Ba kích",
+    "herb": "Ba kích thiên",
     "tukhi": 1.6,
     "chua": 0,
     "cay": 1,
@@ -9803,7 +9803,7 @@ window.herbalData = [
   },
   {
     "id": 339,
-    "herb": "Bổ cốt chỉ",
+    "herb": "Bổ cốt chi",
     "tukhi": 3.0,
     "chua": 0,
     "cay": 2,
@@ -10035,7 +10035,7 @@ window.herbalData = [
   },
   {
     "id": 347,
-    "herb": "Thục địa",
+    "herb": "Thục địa hoàng",
     "tukhi": 1.6,
     "chua": 0,
     "cay": 0,
@@ -10354,7 +10354,7 @@ window.herbalData = [
   },
   {
     "id": 358,
-    "herb": "Mạch môn",
+    "herb": "Mạch môn đông",
     "tukhi": -2.6,
     "chua": 0,
     "cay": 0,
@@ -10586,7 +10586,7 @@ window.herbalData = [
   },
   {
     "id": 366,
-    "herb": "Sơn thù",
+    "herb": "Sơn thù du",
     "tukhi": 1.3,
     "chua": 2,
     "cay": 0,
