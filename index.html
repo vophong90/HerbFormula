@@ -1231,16 +1231,42 @@ function drawHerbBarChart(effect) {
   const scores = data.map(d => d.score);
 
   const canvas = document.getElementById("herbBarChart");
-  const wrapper = document.getElementById("herbChartWrapper");
+  const ctx = canvas.getContext("2d");
 
-  // ✅ Tính chiều rộng dựa trên số lượng cột (60px/cột)
+  // ✅ Tính chiều rộng dựa trên số lượng cột
   const columnWidth = 60;
   const chartWidth = Math.max(400, labels.length * columnWidth);
   canvas.width = chartWidth;
 
-  const ctx = canvas.getContext("2d");
+  // Tìm dữ liệu herbalData theo tên tiếng Việt
+  const enrichedData = data.map(d => {
+    const matched = window.herbalData.find(h => h.herb === d.vietnamese);
+    return {
+      ...d,
+      tukhi: matched?.tukhi ?? null,
+      sd_dose: matched?.sd_dose ?? null
+    };
+  });
 
-  // Xoá biểu đồ cũ nếu có
+  // ✅ Chuyển tứ khí thành màu sắc
+  function tukhiToColor(tukhi) {
+    if (tukhi == null) return "white";
+    const clamped = Math.max(-5, Math.min(5, tukhi));
+    const norm = (clamped + 5) / 10;
+    const red = Math.round(255 * norm);
+    const green = 255 - red;
+    return `rgb(${red}, ${green}, ${255 - red})`; // xanh <–> đỏ
+  }
+
+  const backgroundColors = enrichedData.map(d =>
+    d.tukhi == null ? "white" : tukhiToColor(d.tukhi)
+  );
+
+  const borderColors = enrichedData.map(d =>
+    d.tukhi == null ? "rgba(54, 162, 235, 1)" : "black"
+  );
+
+  // Xóa biểu đồ cũ nếu có
   if (window.herbChartInstance) {
     window.herbChartInstance.destroy();
   }
@@ -1252,14 +1278,14 @@ function drawHerbBarChart(effect) {
       datasets: [{
         label: "Điểm mạnh (score)",
         data: scores,
-        backgroundColor: "rgba(54, 162, 235, 0.6)",
-        borderColor: "rgba(54, 162, 235, 1)",
-        borderWidth: 1,
-        barThickness: 40 // ✅ Đảm bảo mỗi cột luôn nhỏ gọn
+        backgroundColor: backgroundColors,
+        borderColor: borderColors,
+        borderWidth: 2,
+        barThickness: 40
       }]
     },
     options: {
-      responsive: false, // ✅ không tự co lại theo màn hình
+      responsive: false,
       maintainAspectRatio: false,
       scales: {
         x: {
@@ -1275,9 +1301,11 @@ function drawHerbBarChart(effect) {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (ctx) => {
-              const herb = data[ctx.dataIndex];
-              return `${herb.vietnamese} (${herb.latin}): ${herb.score}`;
+            label: function(ctx) {
+              const herb = enrichedData[ctx.dataIndex];
+              const latin = herb.latin || "–";
+              const dose = herb.sd_dose != null ? `${herb.sd_dose}g` : "Không rõ liều";
+              return `${herb.vietnamese} (${latin}):\nĐiểm: ${herb.score}, Liều: ${dose}`;
             }
           }
         }
