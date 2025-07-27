@@ -934,15 +934,20 @@ ${rawText}
     if (gptText.startsWith("```")) {
       gptText = gptText.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
     }
-   console.log("📥 GPT raw text:", gptText);
-    let classicSyndromes = [];
-    try {
-      classicSyndromes = JSON.parse(gptText);
-    } catch (err) {
-      outputBox.value = "❌ GPT trả về JSON không hợp lệ.";
-      console.error("❌ Lỗi JSON:", err, "\nGPT trả:", gptText);
-      return;
-    }
+  let classicSyndromes = [];
+try {
+  // Gỡ đoạn ```json ... ```
+  const match = gptText.match(/```json\s*([\s\S]*?)```/i);
+  if (match) {
+    gptText = match[1].trim();
+  }
+
+  classicSyndromes = JSON.parse(gptText);
+} catch (err) {
+  outputBox.value = "❌ GPT trả về JSON không hợp lệ.";
+  console.error("❌ Lỗi JSON:", err, "\nGPT trả:", gptText);
+  return;
+}
 
     if (!Array.isArray(classicSyndromes) || classicSyndromes.length === 0) {
       outputBox.value = "⚠️ GPT không xác định được hội chứng phù hợp.";
