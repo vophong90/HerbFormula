@@ -1249,27 +1249,34 @@ function drawHerbBarChart(effect) {
   });
 
   // ✅ Chuyển tứ khí thành màu sắc
-  function tukhiToColor(tukhi) {
-  if (tukhi == null || tukhi === 0) return "white";
+ function tukhiToColor(tukhi) {
+  if (tukhi == null) return "white";
 
-  const abs = Math.min(5, Math.abs(tukhi)); // Giới hạn độ mạnh từ 0–5
-  const intensity = Math.round((abs / 5) * 200 + 55); // Sáng từ 55–255
+  const colors = [
+    "#2c7bb6", // Đại Hàn
+    "#00a6ca", // Hàn
+    "#00ccbc", // Lương
+    "#ffffbf", // Bình
+    "#fdae61", // Ôn
+    "#f46d43", // Nhiệt
+    "#d73027"  // Đại Nhiệt
+  ];
 
-  if (tukhi > 0) {
-    // Dương → đỏ tươi
-    return `rgb(${intensity}, 60, 60)`;
-  } else {
-    // Âm → xanh ngọc
-    return `rgb(60, ${intensity}, ${intensity})`;
-  }
+  if (tukhi <= -3.5) return colors[0];
+  if (tukhi <= -2)   return colors[1];
+  if (tukhi <= -0.5) return colors[2];
+  if (tukhi < 0.5)   return colors[3];
+  if (tukhi < 2)     return colors[4];
+  if (tukhi < 3.5)   return colors[5];
+  return colors[6];
 }
 
 const backgroundColors = enrichedData.map(d =>
-  tukhiToColor(d.tukhi)
+  d.tukhi == null ? "white" : tukhiToColor(d.tukhi)
 );
 
 const borderColors = enrichedData.map(d =>
-  d.tukhi == null || d.tukhi === 0 ? "rgba(54, 162, 235, 1)" : "black"
+  d.tukhi == null ? "#cccccc" : "black"
 );
 
   // Xóa biểu đồ cũ nếu có
