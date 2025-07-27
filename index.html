@@ -936,24 +936,33 @@ ${rawText}
     if (gptText.startsWith("```")) {
       gptText = gptText.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
     }
- let classicSyndromes = [];
+ 
+   let classicSyndromes = [];
 
 try {
+  // Gỡ block ```json ... ```
   const match = gptText.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (match) {
     gptText = match[1].trim();
   }
 
-  if (gptText.startsWith('"') || gptText.includes('\\"')) {
-    const firstParse = JSON.parse(gptText);       
-    classicSyndromes = JSON.parse(firstParse);    
+  // Nếu là chuỗi bị stringify: bắt đầu bằng \n[ hoặc chứa nhiều \"
+  const looksLikeEscaped = gptText.includes('\\"') || gptText.includes('\\n') || gptText.startsWith('"[');
+
+  if (looksLikeEscaped) {
+    const firstParse = JSON.parse(gptText);       // parse thành chuỗi JSON thực
+    classicSyndromes = JSON.parse(firstParse);    // parse thành object thực
   } else {
-    classicSyndromes = JSON.parse(gptText);      
+    classicSyndromes = JSON.parse(gptText);       // parse trực tiếp nếu đúng
+  }
+
+  if (!Array.isArray(classicSyndromes)) {
+    throw new Error("Kết quả không phải mảng hội chứng hợp lệ.");
   }
 
 } catch (err) {
   outputBox.value = "❌ GPT trả về JSON không hợp lệ.";
-  console.error("❌ Lỗi JSON:", err, "\nGPT trả:", gptText);
+  console.error("❌ Lỗi JSON:", err, "\n📥 GPT trả:", gptText);
   return;
 }
 
