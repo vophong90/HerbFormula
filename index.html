@@ -1855,40 +1855,79 @@ Không kèm phân tích dài dòng.
   alert("✅ Đã gợi ý vị thuốc dự phòng biến chứng.");
 }
 
- function renderFinalGPTFormula() {
-  const strengthText = document.getElementById("sixs-strength")?.value || "";
-  const sideEffectText = document.getElementById("sixs-sideeffect")?.value || "";
-  const secondaryText = document.getElementById("sixs-secondary")?.value || "";
+function renderFinalGPTFormula() {
+  const fields = [
+    "sixs-source",
+    "sixs-symptom",
+    "sixs-site",
+    "sixs-strength",
+    "sixs-sideeffect",
+    "sixs-secondary"
+  ];
 
-  const allLines = [strengthText, sideEffectText, secondaryText]
+  const allLines = fields
+    .map(id => document.getElementById(id)?.value || "")
     .join("\n")
     .split("\n")
     .map(line => line.trim())
-    .filter(line => line.includes(":"));
+    .filter(line => line);
 
   const herbMap = new Map();
 
   for (const line of allLines) {
-    const [herb, doseRaw] = line.split(":").map(p => p.trim());
-    if (!herb) continue;
+    let herbs = [];
+    let dose = null;
 
-    // Tìm tất cả số trong chuỗi (g, gam)
-    const numbers = (doseRaw.match(/\d+/g) || []).map(Number);
-    const maxDose = numbers.length > 0 ? Math.max(...numbers) : 0;
+    // Trường hợp có "Liều thường dùng: ..."
+    const doseMatch = line.match(/Liều thường dùng\s*:\s*([\d–\-~toTO ]+)(g|gam)?/i);
+    if (doseMatch) {
+      const doseRange = doseMatch[1].replace(/[^\d–\-]/g, "").trim();
+      const nums = doseRange.split(/–|–|-/).map(s => parseInt(s.trim())).filter(n => !isNaN(n));
+      dose = nums.length > 0 ? Math.max(...nums) : null;
+    }
 
-    // Nếu đã có, lấy liều cao hơn
-    if (!herbMap.has(herb)) {
-      herbMap.set(herb, maxDose);
-    } else {
-      const existing = herbMap.get(herb);
-      if (maxDose > existing) {
-        herbMap.set(herb, maxDose);
+    // Trường hợp định dạng "Tên thuốc: liều"
+    const colonMatch = line.match(/^(.+?):\s*(\d+)(g|gam)?/i);
+    if (colonMatch) {
+      const herb = colonMatch[1].replace(/[\(\[].*?[\)\]]/g, "").trim();
+      dose = parseInt(colonMatch[2]);
+      herbs.push(herb);
+    }
+
+    // Trường hợp "nhóm: thuốc1, thuốc2"
+    if (!doseMatch && !colonMatch && line.includes(":")) {
+      const [label, content] = line.split(":");
+      if (!content.includes("Không tìm thấy")) {
+        herbs = content.split(",").map(h => h.trim().replace(/[\(\[].*?[\)\]]/g, ""));
+        dose = null;
+      }
+    }
+
+    // Trường hợp chỉ có tên thuốc và liều thường dùng
+    if (herbs.length === 0 && doseMatch) {
+      const nameMatch = line.match(/^\d*\.*\s*(.+?)(–|Liều thường dùng|:)/);
+      if (nameMatch) {
+        const herb = nameMatch[1].replace(/[\(\[].*?[\)\]]/g, "").trim();
+        herbs.push(herb);
+      }
+    }
+
+    // Ghi vào map
+    for (const herb of herbs) {
+      if (!herb) continue;
+      if (!herbMap.has(herb)) {
+        herbMap.set(herb, dose);
+      } else {
+        const existingDose = herbMap.get(herb);
+        if (dose !== null && (existingDose === null || dose > existingDose)) {
+          herbMap.set(herb, dose);
+        }
       }
     }
   }
 
   const finalFormula = Array.from(herbMap.entries())
-    .map(([herb, dose]) => `${herb} ${dose}g`)
+    .map(([herb, dose]) => dose !== null ? `${herb} ${dose}g` : herb)
     .join(", ");
 
   const outputBox = document.getElementById("final-gpt-formula");
