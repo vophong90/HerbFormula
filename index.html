@@ -221,12 +221,8 @@
 
 <!-- Mô hình 6S SVG + Tooltip CHUẨN -->
 <div class="flex flex-col items-center my-8">
-  <div class="w-full max-w-[300px] aspect-square bg-white border rounded-xl shadow relative overflow-hidden">
+  <div class="w-full max-w-[300px] aspect-square shrink-0 bg-white border rounded-xl shadow relative overflow-hidden">
     <svg viewBox="0 0 300 300" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
-      <!-- Vòng tròn trung tâm -->
-      <circle cx="150" cy="150" r="60" fill="#0f2d3d" />
-      <text x="150" y="155" text-anchor="middle" font-size="24" fill="white" font-weight="bold">6S</text>
-
       <!-- S1 -->
       <g onmouseenter="showTooltip('🟦 Source: Điều trị trực tiếp vào tác nhân gây bệnh')" onmouseleave="clearTooltip()">
         <path d="M150,150 L150,0 A150,150 0 0,1 225,38 Z" fill="#3db9d3" />
@@ -236,7 +232,7 @@
       <!-- S2 -->
       <g onmouseenter="showTooltip('🟨 Symptom: Điều trị triệu chứng chính của bệnh')" onmouseleave="clearTooltip()">
         <path d="M150,150 L225,38 A150,150 0 0,1 262,112 Z" fill="#f9b233" />
-        <text x="255" y="90" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Symptom</text>
+        <text x="260" y="90" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Symptom</text>
       </g>
 
       <!-- S3 -->
@@ -248,20 +244,24 @@
       <!-- S4 -->
       <g onmouseenter="showTooltip('🟩 Strength: Chọn vị thuốc phù hợp với mức độ bệnh')" onmouseleave="clearTooltip()">
         <path d="M150,150 L240,195 A150,150 0 0,1 150,300 Z" fill="#9dc83c" />
-        <text x="200" y="265" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Strength</text>
+        <text x="200" y="275" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Strength</text>
       </g>
 
       <!-- S5 -->
       <g onmouseenter="showTooltip('🟧 Side-effect: Hạn chế tác dụng phụ của thuốc khác')" onmouseleave="clearTooltip()">
         <path d="M150,150 L150,300 A150,150 0 0,1 60,240 Z" fill="#f57f45" />
-        <text x="110" y="265" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Side-effect</text>
+        <text x="100" y="275" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Side-effect</text>
       </g>
 
       <!-- S6 -->
       <g onmouseenter="showTooltip('🟪 Secondary: Ngăn tiến triển bệnh về sau')" onmouseleave="clearTooltip()">
         <path d="M150,150 L60,240 A150,150 0 0,1 75,75 Z" fill="#6a3fa0" />
-        <text x="85" y="110" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Secondary</text>
+        <text x="80" y="115" font-size="11" text-anchor="middle" fill="white" font-weight="bold" style="text-shadow: 0 1px 2px black;">Secondary</text>
       </g>
+
+      <!-- Vòng tròn trung tâm – ĐỂ CUỐI ĐỂ KHÔNG CHE TOOLTIP -->
+      <circle cx="150" cy="150" r="60" fill="#0f2d3d" />
+      <text x="150" y="155" text-anchor="middle" font-size="24" fill="white" font-weight="bold">6S</text>
     </svg>
   </div>
 
