@@ -920,10 +920,8 @@ ${rawText}
   }
 ]
 
-❗ KHÔNG escape ký tự, KHÔNG xuống dòng thừa
-❗ KHÔNG viết lời bình luận, KHÔNG thêm chữ nào ngoài JSON
-❗ KHÔNG thêm lời bình luận, KHÔNG giải thích ngoài mảng JSON.
-❗ Nếu không chắc chắn, vẫn hãy chọn hội chứng gần nhất có thể suy luận được.
+❗Chỉ trả về JSON.stringify(...) của kết quả trên, không thêm bất kỳ nội dung nào khác.
+❗Nếu không chắc chắn, vẫn hãy chọn hội chứng gần nhất có thể suy luận được.
 `.trim();
 
   try {
@@ -946,22 +944,24 @@ try {
     gptText = match[1].trim();
   }
 
-  // 2. Nếu là chuỗi escape toàn bộ thì JSON.parse 2 lần
   let parsedText = gptText.trim();
+  let firstParse;
 
-  // Nếu chuỗi bắt đầu và kết thúc bằng dấu nháy kép và có \" bên trong
-  const isEscapedString = parsedText.startsWith('"') && parsedText.endsWith('"') && parsedText.includes('\\"');
-
-  if (isEscapedString) {
-    const firstParse = JSON.parse(parsedText);      // Bỏ escape => thành chuỗi JSON thật
-    classicSyndromes = JSON.parse(firstParse);      // Parse lần 2 => object thực
-  } else {
-    classicSyndromes = JSON.parse(parsedText);      // Bình thường
+  try {
+    // 2. Thử parse thẳng (trong trường hợp JSON chuẩn)
+    classicSyndromes = JSON.parse(parsedText);
+  } catch (e1) {
+    try {
+      // 3. Nếu lỗi, thử parse 2 lần (escape string bị thiếu dấu " bên ngoài)
+      firstParse = JSON.parse(`"${parsedText.replace(/"/g, '\\"')}"`); // ép thành chuỗi JSON
+      classicSyndromes = JSON.parse(firstParse);
+    } catch (e2) {
+      throw new Error("Không thể parse dữ liệu dù đã thử 2 cách.");
+    }
   }
 
-  // 3. Kiểm tra chắc chắn là mảng
   if (!Array.isArray(classicSyndromes)) {
-    throw new Error("Kết quả không phải mảng hội chứng hợp lệ.");
+    throw new Error("Kết quả không phải là mảng hợp lệ.");
   }
 
 } catch (err) {
