@@ -934,7 +934,7 @@ ${rawText}
     if (gptText.startsWith("```")) {
       gptText = gptText.replace(/```[a-zA-Z]*\n?/, "").replace(/```$/, "");
     }
-
+   console.log("📥 GPT raw text:", gptText);
     let classicSyndromes = [];
     try {
       classicSyndromes = JSON.parse(gptText);
