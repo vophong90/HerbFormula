@@ -220,33 +220,46 @@
 </div>
 
 <!-- 4. Mô hình 6S -->
-  <!-- Vùng hiển thị ảnh mô hình 6S -->
-<div class="flex flex-col items-center mb-8">
-  <img src="6S_main.png" alt="Mô hình 6S" class="w-96 mb-4">
-  <div id="sixs-tooltip" class="text-sm text-gray-700 text-center h-12 transition-opacity duration-200"></div>
-</div>
-  <script>
-  const tooltip = document.getElementById("sixs-tooltip");
-
-  const explanations = {
-    "sixs-source": "🟦 S1 – Source: Cho các vị thuốc điều trị trực tiếp vào tác nhân gây bệnh.",
-    "sixs-symptom": "🟨 S2 – Symptom: Cho các vị thuốc điều trị triệu chứng than phiền chính của bệnh nhân.",
-    "sixs-site": "🟥 S3 – Site: Cho các vị thuốc có vị trí tác động đặc hiệu ngay vị trí bệnh.",
-    "sixs-strength": "🟩 S4 – Strength: Chọn vị thuốc có hiệu lực tương ứng với mức độ nặng của bệnh.",
-    "sixs-sideeffect": "🟧 S5 – Side-effect: Cho các vị thuốc làm giảm/mất tác dụng phụ do thuốc khác gây ra.",
-    "sixs-secondary": "🟪 S6 – Secondary prevention: Cho các vị thuốc cắt đứt con đường diễn tiến tiếp theo của bệnh."
-  };
-
-  Object.keys(explanations).forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.addEventListener("mouseenter", () => tooltip.textContent = explanations[id]);
-    el.addEventListener("mouseleave", () => tooltip.textContent = "");
-  });
-</script>
-
-<div class="mb-8">
+ <div class="mb-8">
   <label class="font-semibold block mb-2">🔬 Mô hình 6S của bài thuốc:</label>
+   <div class="relative w-80 h-80 mx-auto mt-10 rounded-full">
+  <!-- Tooltip trung tâm -->
+  <div id="sixs-tooltip"
+       class="absolute inset-0 flex items-center justify-center text-center text-sm font-medium text-gray-800">
+    🌀 Rê chuột vào từng phần để xem mô tả
+  </div>
+
+  <!-- 6 phần hình quạt -->
+  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
+       style="transform: rotate(0deg); background-color: #3db9d3;"
+       onmouseenter="showTooltip('🟦 Source: Điều trị nguyên nhân')"></div>
+
+  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
+       style="transform: rotate(60deg); background-color: #f25d4e;"
+       onmouseenter="showTooltip('🟥 Site: Vị trí tác động đặc hiệu')"></div>
+
+  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
+       style="transform: rotate(120deg); background-color: #fba937;"
+       onmouseenter="showTooltip('🟨 Symptom: Điều trị triệu chứng chính')"></div>
+
+  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
+       style="transform: rotate(180deg); background-color: #87b556;"
+       onmouseenter="showTooltip('🟩 Strength: Hiệu lực thuốc phù hợp bệnh')"></div>
+
+  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
+       style="transform: rotate(240deg); background-color: #6b3fa0;"
+       onmouseenter="showTooltip('🟪 Secondary prevention: Dự phòng tiến triển')"></div>
+
+  <div class="absolute w-1/2 h-1/2 origin-bottom-left top-1/2 left-1/2"
+       style="transform: rotate(300deg); background-color: #fc8955;"
+       onmouseenter="showTooltip('🟧 Side-effect: Ngăn tác dụng phụ của thuốc')"></div>
+</div>
+
+<script>
+  function showTooltip(text) {
+    document.getElementById("sixs-tooltip").textContent = text;
+  }
+</script>
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
     <!-- S1 -->
@@ -1253,7 +1266,6 @@ function setupHerbBarChartUI() {
 }
 
   let herbChartInstance;
-
 function drawHerbBarChart(effect) {
   const data = window.herbsByEffect?.[effect] || [];
 
@@ -1263,13 +1275,14 @@ function drawHerbBarChart(effect) {
   const canvas = document.getElementById("herbBarChart");
   const wrapper = document.getElementById("herbChartWrapper");
 
-  // ✅ Tính chiều rộng động: mỗi cột ~60px, cộng thêm khoảng cách
+  // ✅ Tính chiều rộng dựa trên số lượng cột (60px/cột)
   const columnWidth = 60;
-  const chartWidth = labels.length * columnWidth;
+  const chartWidth = Math.max(400, labels.length * columnWidth);
   canvas.width = chartWidth;
 
   const ctx = canvas.getContext("2d");
 
+  // Xoá biểu đồ cũ nếu có
   if (window.herbChartInstance) {
     window.herbChartInstance.destroy();
   }
@@ -1284,27 +1297,28 @@ function drawHerbBarChart(effect) {
         backgroundColor: "rgba(54, 162, 235, 0.6)",
         borderColor: "rgba(54, 162, 235, 1)",
         borderWidth: 1,
-        barThickness: 40 // ✅ luôn giữ cột nhỏ gọn
+        barThickness: 40 // ✅ Đảm bảo mỗi cột luôn nhỏ gọn
       }]
     },
     options: {
-      responsive: false, // ✅ quan trọng để dùng width tự động
+      responsive: false, // ✅ không tự co lại theo màn hình
       maintainAspectRatio: false,
       scales: {
         x: {
-          beginAtZero: true,
-          ticks: { autoSkip: false }
+          ticks: { autoSkip: false },
+          grid: { display: false }
         },
         y: {
-          beginAtZero: true
+          beginAtZero: true,
+          grid: { display: true }
         }
       },
       plugins: {
         legend: { display: false },
         tooltip: {
           callbacks: {
-            label: (context) => {
-              const herb = data[context.dataIndex];
+            label: (ctx) => {
+              const herb = data[ctx.dataIndex];
               return `${herb.vietnamese} (${herb.latin}): ${herb.score}`;
             }
           }
@@ -1313,6 +1327,7 @@ function drawHerbBarChart(effect) {
     }
   });
 }
+
 
 
 
