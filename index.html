@@ -400,14 +400,14 @@
   </div>
 </div>
   <!-- 5. Phân tích tác dụng YHCT -->
-  <div class="h-[360px] flex flex-col">
-    <div class="text-left">
-    <button id="btn-render-effect" class="text-blue-700 hover:underline text-lg font-semibold mb-2">
+<div class="flex flex-col">
+  <div class="text-left mb-2">
+    <button id="btn-render-effect" class="text-blue-700 hover:underline text-lg font-semibold">
       🌿 Phân tích Tác dụng YHCT
     </button>
-    <div class="flex-1 overflow-x-auto">
-      <canvas id="chart-effect" class="border rounded shadow w-full h-full"></canvas>
-    </div>
+  </div>
+  <div class="w-full border rounded shadow overflow-hidden" style="height: 360px;">
+    <canvas id="chart-effect" class="w-full h-full"></canvas>
   </div>
 </div>
 </div>
@@ -2008,40 +2008,76 @@ function renderChartDirection() {
     },
     plugins: [{
       id: 'vectorPlugin',
-      afterDraw(chart) {
-        const { ctx, chartArea, scales } = chart;
-        const centerX = chartArea.left + chartArea.width / 2;
-        const centerY = chartArea.top + chartArea.height / 2;
+  afterDraw(chart) {
+  const { ctx, chartArea, scales, config } = chart;
+  const centerX = chartArea.left + chartArea.width / 2;
+  const centerY = chartArea.top + chartArea.height / 2;
 
-        const rScale = scales.r;
-        const radius = rScale.getPixelForValue(magnitude) - rScale.getPixelForValue(0);
-        const angle = angleRad - Math.PI / 2;
+  const rScale = scales.r;
+  if (!rScale) {
+    console.warn("❌ Không tìm thấy trục r.");
+    return;
+  }
 
-        const endX = centerX + radius * Math.cos(angle);
-        const endY = centerY + radius * Math.sin(angle);
+  const magnitude = config.options._vectorMagnitude;
+  const angleRad = config.options._vectorAngleRad;
 
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(centerX, centerY);
-        ctx.lineTo(endX, endY);
-        ctx.strokeStyle = "orange";
-        ctx.lineWidth = 3;
-        ctx.stroke();
+  if (typeof magnitude !== "number" || typeof angleRad !== "number" || magnitude === 0) {
+    console.warn("⚠️ Không có dữ liệu vector hợp lệ để vẽ.");
+    return;
+  }
 
-        // Mũi tên
-        const headlen = 10;
-        const dx = endX - centerX;
-        const dy = endY - centerY;
-        const angle2 = Math.atan2(dy, dx);
-        ctx.beginPath();
-        ctx.moveTo(endX, endY);
-        ctx.lineTo(endX - headlen * Math.cos(angle2 - Math.PI / 6), endY - headlen * Math.sin(angle2 - Math.PI / 6));
-        ctx.lineTo(endX - headlen * Math.cos(angle2 + Math.PI / 6), endY - headlen * Math.sin(angle2 + Math.PI / 6));
-        ctx.lineTo(endX, endY);
-        ctx.fillStyle = "orange";
-        ctx.fill();
-        ctx.restore();
-      }
+  const radius = rScale.getPixelForValue(magnitude) - rScale.getPixelForValue(0);
+  const angle = angleRad - Math.PI / 2;
+
+  const endX = centerX + radius * Math.cos(angle);
+  const endY = centerY + radius * Math.sin(angle);
+
+  ctx.save();
+
+  // 👉 Vẽ vector hướng (mũi tên)
+  ctx.beginPath();
+  ctx.moveTo(centerX, centerY);
+  ctx.lineTo(endX, endY);
+  ctx.strokeStyle = "orange";
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  const headlen = 10;
+  const dx = endX - centerX;
+  const dy = endY - centerY;
+  const angle2 = Math.atan2(dy, dx);
+
+  ctx.beginPath();
+  ctx.moveTo(endX, endY);
+  ctx.lineTo(endX - headlen * Math.cos(angle2 - Math.PI / 6), endY - headlen * Math.sin(angle2 - Math.PI / 6));
+  ctx.lineTo(endX - headlen * Math.cos(angle2 + Math.PI / 6), endY - headlen * Math.sin(angle2 + Math.PI / 6));
+  ctx.lineTo(endX, endY);
+  ctx.fillStyle = "orange";
+  ctx.fill();
+
+  // 👉 Vẽ nhãn 4 hướng
+  const labelDistance = rScale.getPixelForValue(rScale.max) + 20;
+  const labels = [
+    { text: "Phù", angle: 0 },
+    { text: "Thăng", angle: Math.PI / 2 },
+    { text: "Trầm", angle: Math.PI },
+    { text: "Giáng", angle: 3 * Math.PI / 2 }
+  ];
+
+  ctx.fillStyle = "#444";
+  ctx.font = "bold 13px sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+
+  labels.forEach(({ text, angle }) => {
+    const x = centerX + labelDistance * Math.cos(angle);
+    const y = centerY + labelDistance * Math.sin(angle);
+    ctx.fillText(text, x, y);
+  });
+
+  ctx.restore();
+}
     }]
   });
 }
