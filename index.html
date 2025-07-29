@@ -1902,116 +1902,100 @@ function safeParseNumber(value) {
 function renderChartDirection() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
-    alert("⚠️ Không có vị thuốc hoặc dữ liệu.");
+    console.warn("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
     return;
   }
 
-  let xTotal = 0;
-  let yTotal = 0;
+  const directions = {
+    "Thăng": 0,
+    "Giáng": 0,
+    "Phù": 0,
+    "Trầm": 0
+  };
+
   const missing = [];
 
-  herbs.forEach(h => {
+  for (const h of herbs) {
     const item = window.herbalData.find(x => x.herb === h.name);
     if (!item) {
       missing.push(h.name + " (không tìm thấy)");
-      return;
+      continue;
     }
 
     const dose = parseFloat(h.dose);
-    const sd = parseFloat(item.sd_dose);
-    const tg = parseFloat(item.thanggiang);
-    const pt = parseFloat(item.phutram);
+    const sd_dose = parseFloat(item.sd_dose);
 
-    if ([dose, sd, tg, pt].some(v => isNaN(v))) {
-      missing.push(h.name + " (thiếu trị số Thăng – Giáng – Phù – Trầm)");
-      return;
+    if (isNaN(dose) || isNaN(sd_dose) || sd_dose === 0) {
+      missing.push(h.name + " (thiếu liều hoặc SD)");
+      continue;
     }
 
-    xTotal += (dose / sd) * pt;
-    yTotal += (dose / sd) * tg;
+    const thang = parseFloat(item.thanggiang);
+    const phu = parseFloat(item.phutram);
+
+    if (!isNaN(thang)) {
+      if (thang > 0) directions["Thăng"] += (dose / sd_dose) * thang;
+      else if (thang < 0) directions["Giáng"] += (dose / sd_dose) * Math.abs(thang);
+    }
+
+    if (!isNaN(phu)) {
+      if (phu > 0) directions["Phù"] += (dose / sd_dose) * phu;
+      else if (phu < 0) directions["Trầm"] += (dose / sd_dose) * Math.abs(phu);
+    }
+  }
+
+  if (missing.length > 0) {
+    alert("⚠️ Các vị thuốc sau thiếu dữ liệu Thăng – Giáng – Phù – Trầm:\n- " + missing.join("\n- "));
+  }
+
+  const labels = Object.keys(directions);
+  const values = Object.values(directions).map(x => +x.toFixed(2));
+  const maxValue = Math.max(...values);
+
+  const ctx = document.getElementById("chart-direction").getContext("2d");
+  if (window.directionChart) window.directionChart.destroy();
+
+  window.directionChart = new Chart(ctx, {
+    type: "polarArea",
+    data: {
+      labels,
+      datasets: [{
+        label: "Tác động Thăng – Giáng – Phù – Trầm",
+        data: values,
+        backgroundColor: [
+          "rgba(255, 99, 132, 0.6)",   // Thăng
+          "rgba(54, 162, 235, 0.6)",   // Giáng
+          "rgba(255, 206, 86, 0.6)",   // Phù
+          "rgba(75, 192, 192, 0.6)"    // Trầm
+        ],
+        borderColor: [
+          "rgba(255, 99, 132, 1)",
+          "rgba(54, 162, 235, 1)",
+          "rgba(255, 206, 86, 1)",
+          "rgba(75, 192, 192, 1)"
+        ],
+        borderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: "Biểu đồ Góc Phương Hướng: Thăng – Giáng – Phù – Trầm"
+        },
+        legend: {
+          position: 'right'
+        }
+      },
+      scales: {
+        r: {
+          beginAtZero: true,
+          suggestedMax: maxValue * 1.25 // mở rộng nhẹ để tránh bị đè
+        }
+      }
+    }
   });
-
-  if (missing.length) {
-    alert("⚠️ Các vị thuốc thiếu dữ liệu:\n- " + missing.join("\n- "));
-  }
-   // ⚙️ Canvas setup
-  const canvas = document.getElementById("chart-direction");
-  const ctx = canvas.getContext("2d");
-  const width = canvas.width;
-  const height = canvas.height;
-  ctx.clearRect(0, 0, width, height);
-
-  // 📐 Tự động scale sao cho điểm M nằm trong khung
-  const margin = 40; // px biên an toàn
-  const maxAbsX = Math.abs(xTotal);
-  const maxAbsY = Math.abs(yTotal);
-
-  const scaleX = (width / 2 - margin) / (maxAbsX || 1); // tránh chia 0
-  const scaleY = (height / 2 - margin) / (maxAbsY || 1);
-  const scale = Math.min(scaleX, scaleY);
-
-  const originX = width / 2;
-  const originY = height / 2;
-
-  // 🧭 Lưới động
-  const step = 1;
-  const maxGridX = Math.floor((width / 2) / scale);
-  const maxGridY = Math.floor((height / 2) / scale);
-
-  ctx.lineWidth = 1;
-  ctx.strokeStyle = "#e5e7eb";
-
-  for (let i = -maxGridX; i <= maxGridX; i++) {
-    if (i === 0) continue;
-    ctx.beginPath();
-    ctx.moveTo(originX + i * scale, 0);
-    ctx.lineTo(originX + i * scale, height);
-    ctx.stroke();
-  }
-
-  for (let i = -maxGridY; i <= maxGridY; i++) {
-    if (i === 0) continue;
-    ctx.beginPath();
-    ctx.moveTo(0, originY - i * scale);
-    ctx.lineTo(width, originY - i * scale);
-    ctx.stroke();
-  }
-
-  // 🧭 Trục X, Y
-  ctx.strokeStyle = "#000";
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(0, originY);
-  ctx.lineTo(width, originY);
-  ctx.stroke();
-
-  ctx.beginPath();
-  ctx.moveTo(originX, 0);
-  ctx.lineTo(originX, height);
-  ctx.stroke();
-
-  // ✍️ Nhãn trục
-  ctx.font = "16px Segoe UI";
-  ctx.fillStyle = "#1f2937";
-  ctx.fillText("🡒 Phù", width - 60, originY - 10);
-  ctx.fillText("🡐 Trầm", 10, originY - 10);
-  ctx.fillText("🡑 Thăng", originX + 10, 20);
-  ctx.fillText("🡓 Giáng", originX + 10, height - 10);
-
-  // 🔵 Vẽ điểm M
-  const pointX = originX + xTotal * scale;
-  const pointY = originY - yTotal * scale;
-
-  ctx.fillStyle = "#2563eb";
-  ctx.shadowColor = "rgba(0,0,0,0.2)";
-  ctx.shadowBlur = 4;
-  ctx.beginPath();
-  ctx.arc(pointX, pointY, 5, 0, 2 * Math.PI);
-  ctx.fill();
-  ctx.shadowBlur = 0;
-
-  ctx.fillStyle = "#111827";
-  ctx.fillText(`M (${xTotal.toFixed(2)}, ${yTotal.toFixed(2)})`, pointX + 10, pointY - 10);
 }
 
 function autoFillStep5Note() {
