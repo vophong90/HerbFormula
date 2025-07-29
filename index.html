@@ -389,14 +389,14 @@
 <!-- 4–5. Thăng – Giáng – Phù – Trầm và Tác dụng YHCT -->
 <div class="my-4 grid grid-cols-1 md:grid-cols-2 gap-4">
   <!-- 4. Thăng – Giáng – Phù – Trầm -->
-  <div class="h-[360px] flex flex-col">
-    <div class="text-left">
-    <button id="btn-render-direction" class="text-blue-700 hover:underline text-lg font-semibold mb-2">
+  <div class="flex flex-col">
+  <div class="text-left mb-2">
+    <button id="btn-render-direction" class="text-blue-700 hover:underline text-lg font-semibold">
       🧭 Phân tích Thăng – Giáng – Phù – Trầm
     </button>
-    <div class="flex-1 overflow-x-auto">
-      <canvas id="chart-direction" class="border rounded shadow w-full h-full"></canvas>
-    </div>
+  </div>
+  <div class="w-full border rounded shadow overflow-hidden" style="height: 360px;">
+    <canvas id="chart-direction" class="w-full h-full"></canvas>
   </div>
 </div>
   <!-- 5. Phân tích tác dụng YHCT -->
@@ -1965,21 +1965,20 @@ function renderChartDirection() {
   // 3. Vẽ biểu đồ
   const ctx = document.getElementById("chart-direction").getContext("2d");
   if (window.directionChart) window.directionChart.destroy();
-  const maxValue = Math.max(V.Thăng, V.Giáng, V.Phù, V.Trầm);
+  const maxValue = Math.max(V.Thăng, V.Giáng, V.Phù, V.Trầm, 1);
 
   window.directionChart = new Chart(ctx, {
-    type: "polarArea", // trick to create polar plot area, then overlay with plugin
+    type: "polarArea",
     data: {
       labels: ["Thăng", "Giáng", "Phù", "Trầm"],
-      datasets: [{
-        data: [0, 0, 0, 0], // không hiển thị gì cả
-        backgroundColor: ["transparent"],
-        borderWidth: 0
+     data: [1, 1, 1, 1],
+backgroundColor: ["rgba(0,0,0,0)"],
+borderWidth: 0
       }]
     },
     options: {
   responsive: true,
-  maintainAspectRatio: false, // ❗Giữ false để canvas lấp toàn bộ div 360px
+  maintainAspectRatio: false,
   plugins: {
     title: {
       display: true,
@@ -1992,14 +1991,14 @@ function renderChartDirection() {
   scales: {
     r: {
       beginAtZero: true,
-      max: Math.ceil(maxValue * 1.1), // ❗Giới hạn trục để không tràn ra ngoài
+      max: Math.ceil(maxValue * 1.1),
       ticks: {
-        stepSize: Math.ceil(maxValue / 3) || 1 // Nhịp chia đều và hợp lý
+        stepSize: Math.ceil(maxValue / 3) || 1 
       }
     }
   },
   layout: {
-    padding: 10 // ❗Tránh đụng lề nếu cần
+    padding: 10 
   }
 },
     plugins: [{
