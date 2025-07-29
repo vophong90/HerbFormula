@@ -1927,7 +1927,6 @@ function renderChartDirection() {
 
     const thanggiang = parseFloat(item.thanggiang);
     const phutram = parseFloat(item.phutram);
-
     const weight = dose / sd;
 
     if (!isNaN(thanggiang)) {
@@ -1945,62 +1944,68 @@ function renderChartDirection() {
     alert("⚠️ Các vị thuốc sau thiếu dữ liệu Thăng – Giáng – Phù – Trầm:\n- " + missing.join("\n- "));
   }
 
-  // 1. Chuyển hướng thành vector tọa độ
-  const degToRad = deg => deg * Math.PI / 180;
   const vectors = [
-    { x: 0, y: V.Phù },               // 0°
-    { x: 0, y: -V.Trầm },             // 180°
-    { x: V.Thăng, y: 0 },             // 90°
-    { x: -V.Giáng, y: 0 }             // 270°
+    { x: 0, y: V.Phù },       // 0°
+    { x: 0, y: -V.Trầm },     // 180°
+    { x: V.Thăng, y: 0 },     // 90°
+    { x: -V.Giáng, y: 0 }     // 270°
   ];
 
-  // 2. Tổng hợp vector
   const sumX = vectors.reduce((s, v) => s + v.x, 0);
   const sumY = vectors.reduce((s, v) => s + v.y, 0);
-
   const magnitude = Math.sqrt(sumX ** 2 + sumY ** 2);
   const angleRad = Math.atan2(sumY, sumX);
-  const angleDeg = (angleRad * 180 / Math.PI + 360) % 360;
 
-  // 3. Vẽ biểu đồ
-  const ctx = document.getElementById("chart-direction").getContext("2d");
+  if (magnitude === 0 || isNaN(magnitude)) {
+    console.warn("⚠️ Vector phương hướng bằng 0 – không vẽ được.");
+    return;
+  }
+
+  const ctx = document.getElementById("chart-direction")?.getContext("2d");
+  if (!ctx) {
+    console.warn("❌ Không tìm thấy canvas 'chart-direction'.");
+    return;
+  }
+
   if (window.directionChart) window.directionChart.destroy();
+
   const maxValue = Math.max(V.Thăng, V.Giáng, V.Phù, V.Trầm, 1);
 
   window.directionChart = new Chart(ctx, {
     type: "polarArea",
-    datasets: [{
+    data: {
       labels: ["Thăng", "Giáng", "Phù", "Trầm"],
-     data: [1, 1, 1, 1],
-backgroundColor: ["rgba(0,0,0,0)"],
-borderWidth: 0
+      datasets: [{
+        data: [1, 1, 1, 1],
+        backgroundColor: ["rgba(0,0,0,0)"],
+        borderWidth: 0
       }]
     },
     options: {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    title: {
-      display: true,
-      text: "Biểu đồ Góc Phương Hướng: Thăng – Giáng – Phù – Trầm"
-    },
-    legend: {
-      position: 'right'
-    }
-  },
-  scales: {
-    r: {
-      beginAtZero: true,
-      max: Math.ceil(maxValue * 1.1),
-      ticks: {
-        stepSize: Math.ceil(maxValue / 3) || 1 
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        title: {
+          display: true,
+          text: "Biểu đồ Góc Phương Hướng: Thăng – Giáng – Phù – Trầm"
+        },
+        legend: {
+          display: false
+        }
+      },
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: Math.ceil(maxValue * 1.1),
+          ticks: {
+            stepSize: Math.ceil(maxValue / 3) || 1
+          }
+        }
+      },
+      layout: {
+        padding: 10
       }
-    }
-  },
-  layout: {
-    padding: 10 
-  }
-},
+    },
     plugins: [{
       id: 'vectorPlugin',
       afterDraw(chart) {
@@ -2010,7 +2015,6 @@ borderWidth: 0
 
         const rScale = scales.r;
         const radius = rScale.getPixelForValue(magnitude) - rScale.getPixelForValue(0);
-
         const angle = angleRad - Math.PI / 2;
 
         const endX = centerX + radius * Math.cos(angle);
@@ -2024,7 +2028,7 @@ borderWidth: 0
         ctx.lineWidth = 3;
         ctx.stroke();
 
-        // Vẽ mũi tên
+        // Mũi tên
         const headlen = 10;
         const dx = endX - centerX;
         const dy = endY - centerY;
