@@ -390,19 +390,23 @@
 <!-- 4–5. Thăng – Giáng – Phù – Trầm và Tác dụng YHCT -->
 <div class="my-4 grid grid-cols-1 md:grid-cols-2 gap-4">
   <!-- 4. Thăng – Giáng – Phù – Trầm -->
-  <div>
+  <div class="h-[360px] flex flex-col">
     <button id="btn-render-direction" class="text-blue-700 hover:underline text-lg font-semibold mb-2">
       🧭 Phân tích Thăng – Giáng – Phù – Trầm
     </button>
-    <canvas id="chart-direction" class="border rounded shadow" style="width: 100%; height: 300px;"></canvas>
+    <div class="flex-1 overflow-x-auto">
+      <canvas id="chart-direction" class="border rounded shadow w-full h-full"></canvas>
+    </div>
   </div>
 
   <!-- 5. Phân tích tác dụng YHCT -->
-  <div>
+  <div class="h-[360px] flex flex-col">
     <button id="btn-render-effect" class="text-blue-700 hover:underline text-lg font-semibold mb-2">
       🌿 Phân tích Tác dụng YHCT
     </button>
-    <canvas id="chart-effect" class="border rounded shadow" style="width: 100%; height: 300px;"></canvas>
+    <div class="flex-1 overflow-x-auto">
+      <canvas id="chart-effect" class="border rounded shadow w-full h-full"></canvas>
+    </div>
   </div>
 </div>
   
@@ -2115,24 +2119,35 @@ function renderChartEffect() {
         data: values,
         backgroundColor: "rgba(255, 159, 64, 0.6)",
         borderColor: "rgba(255, 159, 64, 1)",
-        borderWidth: 1
+        borderWidth: 1,
+        barThickness: labels.length > 15 ? 10 : labels.length > 10 ? 15 : 20
       }]
     },
     options: {
-      indexAxis: "y",
-      responsive: true,
-      plugins: {
-        title: {
-          display: true,
-          text: "Phân tích tổng điểm Tác dụng YHCT của bài thuốc"
-        },
-        legend: { display: false }
-      },
-      scales: {
-        x: { beginAtZero: true },
-        y: { ticks: { autoSkip: false } }
+  indexAxis: "y",
+  responsive: true,
+  maintainAspectRatio: false, // ⚠️ để canvas cao theo div cha
+  plugins: {
+    title: {
+      display: true,
+      text: "Phân tích tổng điểm Tác dụng YHCT của bài thuốc"
+    },
+    legend: { display: false }
+  },
+  scales: {
+    x: { beginAtZero: true },
+    y: {
+      ticks: {
+        autoSkip: false,
+        font: (ctx) => {
+          const total = labels.length;
+          const size = total > 15 ? 10 : total > 10 ? 12 : 14;
+          return { size };
+        }
       }
     }
+  }
+}
   });
 
   console.log("✅ Biểu đồ đã được vẽ.");
