@@ -1443,7 +1443,6 @@ function saveStep4() {
   };
 
   localStorage.setItem("currentData", JSON.stringify(data));
-  console.log("✅ Đã lưu dữ liệu bước 4.");
 }
   
 //Hàm cho bước 5
@@ -2080,7 +2079,7 @@ function autoFillStep5Note() {
 function renderChartEffect() {
   const herbsByEffect = window.herbsByEffect || {};
   const masterHerbData = window.herbalData || [];
-  const formula = getFinalHerbList(); // ✅ Lấy đúng toa thuốc cuối cùng
+  const formula = getFinalHerbList();
 
   if (!Array.isArray(formula) || formula.length === 0) {
     alert("⚠️ Không có toa thuốc để phân tích.");
@@ -2088,9 +2087,6 @@ function renderChartEffect() {
   }
 
   const effectScores = {};
-
-  console.log("🌿 BẮT ĐẦU PHÂN TÍCH TÁC DỤNG YHCT");
-  console.log("📦 Toa thuốc cần phân tích:", formula);
 
   for (const herbItem of formula) {
     const herbName = herbItem.name?.trim();
@@ -2104,8 +2100,6 @@ function renderChartEffect() {
     const standard = masterHerbData.find(h => h.herb?.trim() === herbName && h.sd_dose);
     const sdDose = standard ? parseFloat(standard.sd_dose) : doseUsed;
 
-    console.log(`➡️ Đang xử lý: ${herbName} (dùng ${doseUsed}g, chuẩn ${sdDose}g)`);
-
     let matched = false;
 
     for (const [effect, herbs] of Object.entries(herbsByEffect)) {
@@ -2117,8 +2111,6 @@ function renderChartEffect() {
           matched = true;
           const weighted = (score * doseUsed) / sdDose;
           effectScores[effect] = (effectScores[effect] || 0) + weighted;
-
-          console.log(`✅ Khớp: "${herbName}" → ${effect} (+${weighted.toFixed(2)})`);
         }
       }
     }
@@ -2127,8 +2119,6 @@ function renderChartEffect() {
       console.warn(`❌ Không tìm thấy tác dụng phù hợp cho: ${herbName}`);
     }
   }
-
-  console.log("📊 Tổng hợp điểm theo tác dụng:", effectScores);
 
   const labels = Object.keys(effectScores);
   const values = Object.values(effectScores).map(x => +x.toFixed(2));
@@ -2179,8 +2169,6 @@ function renderChartEffect() {
   }
 }
   });
-
-  console.log("✅ Biểu đồ đã được vẽ.");
 }
   
 function saveStep5() {
