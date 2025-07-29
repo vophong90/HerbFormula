@@ -1941,7 +1941,7 @@ function renderChartDirection() {
   }
 
   if (missing.length > 0) {
-    alert("⚠️ Các vị thuốc sau thiếu dữ liệu Thăng – Giáng – Phù – Trầm:\n- " + missing.join("\n- "));
+    alert("⚠️ Thiếu dữ liệu:\n- " + missing.join("\n- "));
   }
 
   const vectors = [
@@ -1956,22 +1956,12 @@ function renderChartDirection() {
   const magnitude = Math.sqrt(sumX ** 2 + sumY ** 2);
   const angleRad = Math.atan2(sumY, sumX);
 
-  if (magnitude === 0 || isNaN(magnitude)) {
-    console.warn("⚠️ Vector phương hướng bằng 0 – không vẽ được.");
-    return;
-  }
-
   const ctx = document.getElementById("chart-direction")?.getContext("2d");
-  if (!ctx) {
-    console.warn("❌ Không tìm thấy canvas 'chart-direction'.");
-    return;
-  }
-
+  if (!ctx) return;
   if (window.directionChart) window.directionChart.destroy();
 
   const maxValue = Math.max(V.Thăng, V.Giáng, V.Phù, V.Trầm, 1);
 
-  // Plugin vẽ vector và nhãn
   const vectorPlugin = {
     id: 'vectorPlugin',
     afterDraw(chart) {
@@ -1984,11 +1974,11 @@ function renderChartDirection() {
 
       const magnitude = config.options._vectorMagnitude;
       const angleRad = config.options._vectorAngleRad;
-
-      if (typeof magnitude !== "number" || typeof angleRad !== "number" || magnitude === 0) return;
+      if (!magnitude || !angleRad) return;
 
       const radius = rScale.getPixelForValue(magnitude) - rScale.getPixelForValue(0);
       const angle = angleRad - Math.PI / 2;
+
       const endX = centerX + radius * Math.cos(angle);
       const endY = centerY + radius * Math.sin(angle);
 
@@ -2000,21 +1990,16 @@ function renderChartDirection() {
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      // Vẽ mũi tên
       const headlen = 10;
-      const dx = endX - centerX;
-      const dy = endY - centerY;
-      const angle2 = Math.atan2(dy, dx);
-
+      const angle2 = Math.atan2(endY - centerY, endX - centerX);
       ctx.beginPath();
       ctx.moveTo(endX, endY);
       ctx.lineTo(endX - headlen * Math.cos(angle2 - Math.PI / 6), endY - headlen * Math.sin(angle2 - Math.PI / 6));
       ctx.lineTo(endX - headlen * Math.cos(angle2 + Math.PI / 6), endY - headlen * Math.sin(angle2 + Math.PI / 6));
-      ctx.lineTo(endX, endY);
       ctx.fillStyle = "orange";
       ctx.fill();
 
-      // Vẽ nhãn
+      // Nhãn 4 hướng
       const labelDistance = rScale.getPixelForValue(rScale.max) + 20;
       const labels = [
         { text: "Phù", angle: 0 },
@@ -2027,7 +2012,6 @@ function renderChartDirection() {
       ctx.font = "bold 13px sans-serif";
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-
       labels.forEach(({ text, angle }) => {
         const x = centerX + labelDistance * Math.cos(angle);
         const y = centerY + labelDistance * Math.sin(angle);
@@ -2038,7 +2022,6 @@ function renderChartDirection() {
     }
   };
 
-  // Tạo biểu đồ
   window.directionChart = new Chart(ctx, {
     type: "polarArea",
     data: {
@@ -2052,6 +2035,7 @@ function renderChartDirection() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 1 },
       _vectorMagnitude: magnitude,
       _vectorAngleRad: angleRad,
       plugins: {
@@ -2071,15 +2055,11 @@ function renderChartDirection() {
             stepSize: Math.ceil(maxValue / 3) || 1
           }
         }
-      },
-      layout: {
-        padding: 10
       }
     },
     plugins: [vectorPlugin]
   });
 }
-
 
 function autoFillStep5Note() {
   const herbs = getFinalHerbList();
