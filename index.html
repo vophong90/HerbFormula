@@ -1966,6 +1966,7 @@ function renderChartDirection() {
   // 3. Vẽ biểu đồ
   const ctx = document.getElementById("chart-direction").getContext("2d");
   if (window.directionChart) window.directionChart.destroy();
+  const maxValue = Math.max(V.Thăng, V.Giáng, V.Phù, V.Trầm);
 
   window.directionChart = new Chart(ctx, {
     type: "polarArea", // trick to create polar plot area, then overlay with plugin
