@@ -2046,17 +2046,21 @@ function autoFillStep5Note() {
 function renderChartEffect() {
   const herbsByEffect = window.herbsByEffect || {};
   const masterHerbData = window.herbalData || [];
+  const formula = getFinalHerbList(); // ✅ Lấy đúng toa thuốc cuối cùng
+
+  if (!Array.isArray(formula) || formula.length === 0) {
+    alert("⚠️ Không có toa thuốc để phân tích.");
+    return;
+  }
 
   const effectScores = {};
-  const formula = Array.isArray(masterHerbData) ? masterHerbData : [];
 
   console.log("🌿 BẮT ĐẦU PHÂN TÍCH TÁC DỤNG YHCT");
-  console.log("📦 Danh sách vị thuốc trong toa:", formula.map(h => h.herb));
-  console.log("📚 Các tác dụng có trong herbsByEffect:", Object.keys(herbsByEffect));
+  console.log("📦 Toa thuốc cần phân tích:", formula);
 
   for (const herbItem of formula) {
-    const herbName = herbItem.herb?.trim();
-    const doseUsed = parseFloat(herbItem.sd_dose || 0);
+    const herbName = herbItem.name?.trim();
+    const doseUsed = parseFloat(herbItem.dose || 0);
 
     if (!herbName || doseUsed <= 0) {
       console.warn(`⚠️ Bỏ qua vị thuốc không hợp lệ: ${herbName}`);
@@ -2066,7 +2070,7 @@ function renderChartEffect() {
     const standard = masterHerbData.find(h => h.herb?.trim() === herbName && h.sd_dose);
     const sdDose = standard ? parseFloat(standard.sd_dose) : doseUsed;
 
-    console.log(`➡️ Đang xử lý vị thuốc: ${herbName} (dùng ${doseUsed}g, chuẩn ${sdDose}g)`);
+    console.log(`➡️ Đang xử lý: ${herbName} (dùng ${doseUsed}g, chuẩn ${sdDose}g)`);
 
     let matched = false;
 
@@ -2080,13 +2084,13 @@ function renderChartEffect() {
           const weighted = (score * doseUsed) / sdDose;
           effectScores[effect] = (effectScores[effect] || 0) + weighted;
 
-          console.log(`✅ Khớp: "${herbName}" thuộc tác dụng "${effect}", điểm gốc: ${score}, đóng góp: ${weighted.toFixed(2)}`);
+          console.log(`✅ Khớp: "${herbName}" → ${effect} (+${weighted.toFixed(2)})`);
         }
       }
     }
 
     if (!matched) {
-      console.warn(`❌ Không tìm thấy tác dụng YHCT nào khớp cho: ${herbName}`);
+      console.warn(`❌ Không tìm thấy tác dụng phù hợp cho: ${herbName}`);
     }
   }
 
@@ -2096,7 +2100,7 @@ function renderChartEffect() {
   const values = Object.values(effectScores).map(x => +x.toFixed(2));
 
   if (labels.length === 0) {
-    alert("⚠️ Không có tác dụng YHCT nào được xác định cho các vị thuốc trong toa.");
+    alert("⚠️ Không có tác dụng YHCT nào được xác định.");
     return;
   }
 
@@ -2133,7 +2137,6 @@ function renderChartEffect() {
 
   console.log("✅ Biểu đồ đã được vẽ.");
 }
-
   
 function saveStep5() {
   // ✅ Lấy dữ liệu vị thuốc từ khối nhập
