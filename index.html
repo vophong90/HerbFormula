@@ -1944,17 +1944,10 @@ function renderChartDirection() {
     alert("⚠️ Thiếu dữ liệu:\n- " + missing.join("\n- "));
   }
 
-  const vectors = [
-    { x: 0, y: V.Phù },
-    { x: 0, y: -V.Trầm },
-    { x: V.Thăng, y: 0 },
-    { x: -V.Giáng, y: 0 }
-  ];
-
-  const sumX = vectors.reduce((s, v) => s + v.x, 0);
-  const sumY = vectors.reduce((s, v) => s + v.y, 0);
-  const magnitude = Math.sqrt(sumX ** 2 + sumY ** 2);
-  const angleRad = Math.atan2(sumY, sumX);
+  const vectorX = V.Thăng - V.Giáng;
+  const vectorY = V.Phù - V.Trầm;
+  const magnitude = Math.sqrt(vectorX ** 2 + vectorY ** 2);
+  const angleRad = Math.atan2(vectorY, vectorX);
 
   const ctx = document.getElementById("chart-direction")?.getContext("2d");
   if (!ctx) return;
@@ -1963,18 +1956,12 @@ function renderChartDirection() {
   const maxValue = Math.max(V.Thăng, V.Giáng, V.Phù, V.Trầm, 1);
 
   const vectorPlugin = {
-    id: 'vectorPlugin',
+    id: 'vectorPluginRadar',
     afterDraw(chart) {
-      const { ctx, chartArea, scales, config } = chart;
+      const { ctx, chartArea, scales } = chart;
       const centerX = chartArea.left + chartArea.width / 2;
       const centerY = chartArea.top + chartArea.height / 2;
-
       const rScale = scales.r;
-      if (!rScale) return;
-
-      const magnitude = config.options._vectorMagnitude;
-      const angleRad = config.options._vectorAngleRad;
-      if (!magnitude || !angleRad) return;
 
       const radius = rScale.getPixelForValue(magnitude) - rScale.getPixelForValue(0);
       const angle = angleRad - Math.PI / 2;
@@ -1990,8 +1977,12 @@ function renderChartDirection() {
       ctx.lineWidth = 3;
       ctx.stroke();
 
+      // Mũi tên
       const headlen = 10;
-      const angle2 = Math.atan2(endY - centerY, endX - centerX);
+      const dx = endX - centerX;
+      const dy = endY - centerY;
+      const angle2 = Math.atan2(dy, dx);
+
       ctx.beginPath();
       ctx.moveTo(endX, endY);
       ctx.lineTo(endX - headlen * Math.cos(angle2 - Math.PI / 6), endY - headlen * Math.sin(angle2 - Math.PI / 6));
@@ -1999,61 +1990,45 @@ function renderChartDirection() {
       ctx.fillStyle = "orange";
       ctx.fill();
 
-      // Nhãn 4 hướng
-      const labelDistance = rScale.getPixelForValue(rScale.max) + 20;
-      const labels = [
-        { text: "Phù", angle: 0 },
-        { text: "Thăng", angle: Math.PI / 2 },
-        { text: "Trầm", angle: Math.PI },
-        { text: "Giáng", angle: 3 * Math.PI / 2 }
-      ];
-
-      ctx.fillStyle = "#444";
-      ctx.font = "bold 13px sans-serif";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      labels.forEach(({ text, angle }) => {
-        const x = centerX + labelDistance * Math.cos(angle);
-        const y = centerY + labelDistance * Math.sin(angle);
-        ctx.fillText(text, x, y);
-      });
-
       ctx.restore();
     }
   };
 
   window.directionChart = new Chart(ctx, {
-    type: "polarArea",
+    type: "radar",
     data: {
-      labels: ["Thăng", "Giáng", "Phù", "Trầm"],
+      labels: ["Phù", "Thăng", "Trầm", "Giáng"],
       datasets: [{
-        data: [1, 1, 1, 1],
-        backgroundColor: ["rgba(0,0,0,0)"],
-        borderWidth: 0
+        label: "Tổng lực",
+        data: [V.Phù, V.Thăng, V.Trầm, V.Giáng],
+        backgroundColor: "rgba(255, 165, 0, 0.2)",
+        borderColor: "orange",
+        pointBackgroundColor: "orange"
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
       animation: { duration: 1 },
-      _vectorMagnitude: magnitude,
-      _vectorAngleRad: angleRad,
-      plugins: {
-        title: {
-          display: true,
-          text: "Biểu đồ Góc Phương Hướng: Thăng – Giáng – Phù – Trầm"
-        },
-        legend: {
-          display: false
-        }
-      },
       scales: {
         r: {
           beginAtZero: true,
           max: Math.ceil(maxValue * 1.1),
           ticks: {
             stepSize: Math.ceil(maxValue / 3) || 1
+          },
+          pointLabels: {
+            font: { size: 14 }
           }
+        }
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: "Biểu đồ Radar: Thăng – Giáng – Phù – Trầm"
+        },
+        legend: {
+          display: false
         }
       }
     },
