@@ -2044,6 +2044,74 @@ function autoFillStep5Note() {
   noteBox.value = lines.join("\n") || "Không có ghi chú đặc biệt.";
 }
 
+function renderChartEffect() {
+  const herbsByEffect = window.herbsByEffect || {};
+  const masterHerbData = window.herbalData || [];
+
+  const effectScores = {}; // { "Tân ôn giải biểu": tổng điểm }
+
+  // Lấy toa thuốc đang dùng
+  const formula = Array.isArray(masterHerbData) ? masterHerbData : [];
+
+  for (const herbItem of formula) {
+    const herbName = herbItem.herb?.trim();
+    const doseUsed = parseFloat(herbItem.sd_dose || 0);
+
+    if (!herbName || doseUsed <= 0) continue;
+
+    // Tìm liều chuẩn từ herbalData
+    const standard = masterHerbData.find(h => h.herb?.trim() === herbName && h.sd_dose);
+    const sdDose = standard ? parseFloat(standard.sd_dose) : doseUsed; // fallback
+
+    // Duyệt tất cả các tác dụng
+    for (const [effect, herbs] of Object.entries(herbsByEffect)) {
+      for (const h of herbs) {
+        if (h.vietnamese?.trim() === herbName) {
+          const score = parseFloat(h.score || 0);
+          if (score > 0 && sdDose > 0) {
+            const weighted = (score * doseUsed) / sdDose;
+            effectScores[effect] = (effectScores[effect] || 0) + weighted;
+          }
+        }
+      }
+    }
+  }
+
+  // Chuẩn bị dữ liệu cho biểu đồ
+  const labels = Object.keys(effectScores);
+  const values = Object.values(effectScores).map(x => +x.toFixed(2)); // làm tròn 2 số thập phân
+
+  const ctx = document.getElementById("chart-effect").getContext("2d");
+  if (window.effectChart) window.effectChart.destroy();
+  window.effectChart = new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: labels,
+      datasets: [{
+        label: "Tổng điểm tác dụng",
+        data: values,
+        backgroundColor: "rgba(255, 159, 64, 0.6)",
+        borderColor: "rgba(255, 159, 64, 1)",
+        borderWidth: 1
+      }]
+    },
+    options: {
+      indexAxis: "y",
+      responsive: true,
+      plugins: {
+        title: {
+          display: true,
+          text: "Phân tích tổng điểm Tác dụng YHCT của bài thuốc"
+        },
+        legend: { display: false }
+      },
+      scales: {
+        x: { beginAtZero: true },
+        y: { ticks: { autoSkip: false } }
+      }
+    }
+  });
+}
 
 function saveStep5() {
   // ✅ Lấy dữ liệu vị thuốc từ khối nhập
