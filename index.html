@@ -1969,12 +1969,12 @@ function renderChartDirection() {
 
   window.directionChart = new Chart(ctx, {
     type: "polarArea",
-    data: {
+    datasets: [{
       labels: ["Thăng", "Giáng", "Phù", "Trầm"],
      data: [1, 1, 1, 1],
 backgroundColor: ["rgba(0,0,0,0)"],
 borderWidth: 0
-      }
+      }]
     },
     options: {
   responsive: true,
