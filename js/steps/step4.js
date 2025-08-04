@@ -1,39 +1,114 @@
 export function renderStep4(root) {
-  fetch('./partials/step4.html')
-    .then(res => res.text())
-    .then(html => {
-      root.innerHTML = html;
-      populateStep4();
+  root.innerHTML = `
+    <h2 class="text-2xl font-semibold mb-4">${window.lang.step4.title}</h2>
+    <div class="mb-6">
+      <label class="font-semibold block mb-1">${window.lang.step4.syndrome_label}</label>
+      <div id="confirmed-syndrome" class="bg-gray-100 border px-4 py-2 rounded text-gray-800"></div>
+    </div>
+    <div class="mb-6">
+      <label class="font-semibold block mb-1">${window.lang.step4.top_symptom_label}</label>
+      <ul id="step4-top-symptom-list" class="list-disc list-inside text-gray-700"></ul>
+    </div>
+    <div class="mb-6 border-t pt-6">
+      <div class="flex flex-col md:flex-row gap-6">
+        <div class="flex-1 flex flex-col">
+          <button id="btn-auto-suggest-method" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 mb-3 w-full">
+            ${window.lang.step4.suggest_method_btn}
+          </button>
+          <textarea id="treatmethod-gpt" rows="6"
+            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 flex-grow"
+            placeholder="${window.lang.step4.treatmethod_placeholder}" readonly></textarea>
+        </div>
+        <div class="flex-1 flex flex-col">
+          <label for="keyword-doiduoc" class="block font-semibold mb-1">${window.lang.step4.search_dd_label}</label>
+          <div class="flex space-x-2 mb-3">
+            <input type="text" id="keyword-doiduoc" class="flex-grow border rounded px-3 py-2"
+              placeholder="${window.lang.step4.search_dd_placeholder}">
+            <button id="btn-search-doiduoc" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+              ${window.lang.step4.search_btn}
+            </button>
+          </div>
+          <label for="result-doiduoc" class="block font-semibold mb-1">${window.lang.step4.search_dd_result}</label>
+          <textarea id="result-doiduoc" rows="6"
+            class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800 flex-grow"
+            placeholder="${window.lang.step4.search_dd_result_placeholder}" readonly></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="mt-8 flex flex-col items-center">
+      <label for="effectSelector" class="font-semibold mb-2 text-center">
+        ${window.lang.step4.effect_selector}
+      </label>
+      <select id="effectSelector" class="border rounded px-2 py-1 mb-4"></select>
+      <div id="herbChartWrapper" class="w-full overflow-x-auto">
+        <div class="flex justify-center min-w-fit">
+          <canvas id="herbBarChart" height="300"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div>
+        <label class="font-semibold">S1 – Source:</label>
+        <textarea id="sixs-source" rows="2" class="w-full border rounded px-3 py-2 mt-1"
+          placeholder="${window.lang.step4.sixs_source}"></textarea>
+      </div>
+      <div>
+        <label class="font-semibold">S2 – Symptom:</label>
+        <textarea id="sixs-symptom" rows="2" class="w-full border rounded px-3 py-2 mt-1"
+          placeholder="${window.lang.step4.sixs_symptom}"></textarea>
+      </div>
+      <div>
+        <label class="font-semibold">S3 – Site:</label>
+        <textarea id="sixs-site" rows="2" class="w-full border rounded px-3 py-2 mt-1"
+          placeholder="${window.lang.step4.sixs_site}"></textarea>
+      </div>
+      <div>
+        <label class="font-semibold">S4 – Strength:</label>
+        <textarea id="sixs-strength" rows="2" class="w-full border rounded px-3 py-2 mt-1"
+          placeholder="${window.lang.step4.sixs_strength}"></textarea>
+      </div>
+      <div>
+        <label class="font-semibold">S5 – Side-effect:</label>
+        <textarea id="sixs-sideeffect" rows="2" class="w-full border rounded px-3 py-2 mt-1"
+          placeholder="${window.lang.step4.sixs_sideeffect}"></textarea>
+      </div>
+      <div>
+        <label class="font-semibold">S6 – Secondary Prevention:</label>
+        <textarea id="sixs-secondary" rows="2" class="w-full border rounded px-3 py-2 mt-1"
+          placeholder="${window.lang.step4.sixs_secondary}"></textarea>
+      </div>
+    </div>
+    <div class="mb-6 border-t pt-6 mt-6">
+      <div class="mb-4">
+        <button id="btn-final-gpt-formula" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded mb-2">
+          ${window.lang.step4.final_gpt_formula_btn}
+        </button>
+        <textarea id="final-gpt-formula" rows="3" class="w-full border rounded px-3 py-2 bg-gray-100 text-gray-800"
+                  readonly placeholder="${window.lang.step4.final_gpt_formula_placeholder}"></textarea>
+      </div>
+      <div class="mb-4">
+        <label class="font-semibold block mb-1">${window.lang.step4.final_doctor_label}</label>
+        <textarea id="final-doctor-formula" rows="3" class="w-full border rounded px-3 py-2"
+                  placeholder="${window.lang.step4.final_doctor_placeholder}"></textarea>
+      </div>
+    </div>
+    <div class="flex justify-between">
+      <button id="btn-back-step3" class="bg-gray-500 text-white px-4 py-2 rounded">${window.lang.step4.back}</button>
+      <button id="btn-save-next-step4" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">${window.lang.step4.next}</button>
+    </div>
+  `;
+  populateStep4();
 
-      document.getElementById("btn-back-step3").onclick = () => window.location.hash = "#/step3";
-      document.getElementById("btn-save-next-step4").onclick = () => {
-        saveStep4();
-        window.location.hash = "#/step5";
-      };
-      document.getElementById("btn-auto-suggest-method").onclick = autoSuggestMethod;
-      document.getElementById("btn-search-doiduoc").onclick = searchDoiDuocByKeyword;
-      document.getElementById("btn-final-gpt-formula").onclick = renderFinalGPTFormula;
-      setupHerbBarChartUI();
-    });
+  document.getElementById("btn-back-step3").onclick = () => window.location.hash = "#/step3";
+  document.getElementById("btn-save-next-step4").onclick = () => {
+    saveStep4();
+    window.location.hash = "#/step5";
+  };
+  document.getElementById("btn-auto-suggest-method").onclick = autoSuggestMethod;
+  document.getElementById("btn-search-doiduoc").onclick = searchDoiDuocByKeyword;
+  document.getElementById("btn-final-gpt-formula").onclick = renderFinalGPTFormula;
+  setupHerbBarChartUI();
 }
-
-function populateStep4() {
-  const data = JSON.parse(localStorage.getItem("currentData") || "{}");
-  // Hội chứng
-  const syndrome = data.steps?.step3?.final || "(chưa xác định)";
-  document.getElementById("confirmed-syndrome").textContent = syndrome;
-  // Triệu chứng nổi bật
-  const symptoms = data.steps?.step2?.symptoms || [];
-  const sorted = [...symptoms].sort((a, b) => b.vas - a.vas);
-  const topSymptoms = sorted.slice(0, 5);
-  const ul = document.getElementById("step4-top-symptom-list");
-  ul.innerHTML = "";
-  topSymptoms.forEach(s => {
-    const li = document.createElement("li");
-    li.textContent = `${s.symptom} (VAS ${s.vas})`;
-    ul.appendChild(li);
-  });
-
   // 6S và các trường khác
   const step4 = data.steps?.step4 || {};
   const sixs = step4.sixs || {};
