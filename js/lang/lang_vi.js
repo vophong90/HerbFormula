@@ -1,4 +1,4 @@
-const lang_vi = {
+window.lang_vi = {
   // Tiêu đề chung
   app_title: "🧾 Ứng dụng hỗ trợ lập phương Y học cổ truyền",
 
