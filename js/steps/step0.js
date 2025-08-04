@@ -1,28 +1,72 @@
-<!-- BƯỚC 0: TẠO HỒ SƠ -->
-<label>📅 Ngày giờ khám:</label>
-<input type="datetime-local" id="visit-datetime" class="border p-1 rounded w-full mb-3">
-<h2 class="text-2xl font-semibold mb-4">📁 Bước 0: Quản lý hồ sơ bệnh nhân</h2>
+export function renderStep0(root) {
+  fetch('./partials/step0.html')
+    .then(res => res.text())
+    .then(html => {
+      root.innerHTML = html;
+      attachStep0Events();
+    });
+}
 
-<!-- Mở hồ sơ từ file JSON -->
-<div class="mb-6">
-  <label class="block text-sm font-medium mb-1">📂 Chọn hồ sơ từ file JSON:</label>
-  <input type="file" id="json-file-input" accept=".json" class="block w-full text-sm text-gray-600">
-  <button id="btn-open-patient-file" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-    📥 Mở hồ sơ
-  </button>
-</div>
-<hr class="my-6">
-<!-- Tạo hồ sơ mới -->
-<div class="mb-6">
-  <label class="block text-sm font-medium mb-1">🆕 Tạo hồ sơ mới:</label>
-  <input id="new-patient-name" type="text" placeholder="Nhập tên bệnh nhân..." class="w-full border rounded px-3 py-2">
-  <button id="btn-create-new-patient" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-    ➕ Tạo hồ sơ
-  </button>
-</div>
-<!-- Tiếp tục -->
-<div class="mt-6">
-  <button id="btn-step0-continue" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
-    ➡ Tiếp tục bước 1
-  </button>
-</div>
+function attachStep0Events() {
+  // Nút mở hồ sơ từ file JSON
+  document.getElementById('btn-open-patient-file').onclick = loadPatientFromFile;
+
+  // Nút tạo hồ sơ mới
+  document.getElementById('btn-create-new-patient').onclick = createNewPatient;
+
+  // Nút tiếp tục sang bước 1
+  document.getElementById('btn-step0-continue').onclick = function () {
+    if (typeof populateStep1Fields === "function") populateStep1Fields();
+    window.location.hash = "#/step1";
+  };
+}
+
+// ===== Logic gốc giữ nguyên =====
+window.loadPatientFromFile = function() {
+  const input = document.getElementById("json-file-input");
+  if (!input.files || input.files.length === 0) return alert("Vui lòng chọn một file JSON!");
+
+  const file = input.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (!data.name) return alert("⚠️ File không hợp lệ: thiếu tên bệnh nhân");
+
+      const key = "patient_" + data.name;
+      localStorage.setItem(key, JSON.stringify(data));
+      localStorage.setItem("currentPatient", key);
+      localStorage.setItem("currentData", JSON.stringify(data));
+
+      alert("✅ Đã tải hồ sơ từ file: " + data.name);
+      if (typeof populateStep1Fields === "function") populateStep1Fields();
+      window.location.hash = "#/step1";
+    } catch (err) {
+      alert("❌ Lỗi khi đọc file JSON: " + err.message);
+    }
+  };
+
+  reader.readAsText(file);
+}
+
+window.createNewPatient = function() {
+  const name = document.getElementById("new-patient-name").value.trim();
+  if (!name) return alert("Vui lòng nhập tên!");
+
+  const key = "patient_" + name;
+  if (localStorage.getItem(key)) {
+    if (!confirm("Hồ sơ đã tồn tại. Ghi đè?")) return;
+  }
+
+  const data = {
+    name: name,
+    created: new Date().toISOString(),
+    steps: {}
+  };
+
+  localStorage.setItem(key, JSON.stringify(data));
+  localStorage.setItem("currentPatient", key);
+  localStorage.setItem("currentData", JSON.stringify(data));
+  alert("✅ Đã tạo hồ sơ mới: " + name);
+}
