@@ -26,7 +26,7 @@ export function renderStep3(root) {
         <textarea id="syndrome-classic" rows="3" class="w-full border rounded px-3 py-2" placeholder="${window.lang.step3.classic_placeholder}"></textarea>
       </div>
       <div class="md:col-span-2">
-        <label class="font-semibold block mb-1">${window.lang.step3.final_label}</label>
+        <label class="font-semibold block mb-1">${window.lang.step3.final_syndrome}</label>
         <input id="syndrome-final" type="text" class="w-full border rounded px-3 py-2" placeholder="${window.lang.step3.final_placeholder}">
       </div>
     </div>
