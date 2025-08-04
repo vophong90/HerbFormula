@@ -334,7 +334,7 @@ function renderGradientScale(avgScore) {
     "#d73027"  // Đại Nhiệt
   ];
 
-  const labels = ["Đại Hàn", "Hàn", "Lương", "Bình", "Ôn", "Nhiệt", "Đại Nhiệt"];
+  const labels = ["Đại Hàn (大寒)", "Hàn (寒)", "Lương (凉)", "Bình (平)", "Ôn (温)", "Nhiệt (热)", "Đại Nhiệt (大热)"];
   const numZones = labels.length;
   const zoneWidth = width / numZones;
 
@@ -371,7 +371,7 @@ function renderChartFlavor() {
     return;
   }
 
-  const flavorLabels = ["Toan", "Tân", "Hàm", "Khổ", "Cam", "Phương hương"];
+  const flavorLabels = ["Toan (酸)", "Tân (辛)", "Hàm (咸)", "Khổ (苦)", "Cam (甘)", "Phương hương (芳香)"];
   const flavorKeys = ["chua", "cay", "man", "dang", "ngot", "muithom"];
   const flavorTotals = [0, 0, 0, 0, 0, 0];
   const missingFlavorData = [];
@@ -452,7 +452,7 @@ function renderChartMeridian() {
     return;
   }
 
-  const meridianLabels = ["Tâm", "Can", "Tỳ", "Phế", "Thận", "Tâm bào", "Đại trường", "Tiểu trường", "Vị", "Đởm", "Bàng quang", "Tam tiêu"];
+  const meridianLabels = ["Tâm (心)", "Can (肝)", "Tỳ (脾)", "Phế (肺)", "Thận (肾)", "Tâm bào (心包)", "Đại trường (大肠)", "Tiểu trường (小肠)", "Vị (胃)", "Đởm (胆)", "Bàng quang (膀胱)", "Tam tiêu (三焦)"];
   const meridianKeys = ["tam", "can", "ty", "phe", "than", "tambao", "dai truong", "tieutruong", "vi", "dom", "bangquang", "tamtieu"];
   const meridianTotals = Array(12).fill(0);
   const missingMeridianData = [];
@@ -624,7 +624,7 @@ function renderChartDirection() {
   window.directionChart = new Chart(ctx, {
     type: "radar",
     data: {
-      labels: ["Thăng", "Phù", "Giáng", "Trầm"],
+      labels: ["Thăng (升)", "Phù (浮)", "Giáng (降)", "Trầm (沉)"],
       datasets: [{
         label: "Tổng lực",
         data: [V.Thăng, V.Phù, V.Giáng, V.Trầm],
