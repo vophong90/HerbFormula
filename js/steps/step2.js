@@ -1,26 +1,42 @@
 export function renderStep2(root) {
-  fetch('./partials/step2.html')
-    .then(res => res.text())
-    .then(html => {
-      root.innerHTML = html;
+  root.innerHTML = `
+    <h2 class="text-2xl font-semibold mb-4">${window.lang.step2.title}</h2>
+    <div class="mb-4 space-x-2">
+      <button id="btn-extract-symptoms" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+        ${window.lang.step2.extract}
+      </button>
+      <button id="btn-rank-symptoms" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+        ${window.lang.step2.ranking}
+      </button>
+    </div>
+    <div id="symptom-vas-list" class="space-y-4"></div>
+    <div id="followup-section" class="mt-8 hidden border-t pt-6">
+      <h3 class="text-lg font-semibold mb-4">${window.lang.step2.followup_chart_title}</h3>
+      <canvas id="followup-vas-chart" height="150"></canvas>
+    </div>
+    <div class="mt-6 flex justify-between">
+      <button id="btn-back-step1" class="bg-gray-500 text-white px-4 py-2 rounded">${window.lang.step2.back}</button>
+      <button id="btn-save-next-step2" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">${window.lang.step2.next}</button>
+    </div>
+  `;
 
-      // Sự kiện tách triệu chứng bằng GPT
-      document.getElementById("btn-extract-symptoms").onclick = extractSymptoms;
-      // Sự kiện xếp hạng VAS giảm dần
-      document.getElementById("btn-rank-symptoms").onclick = rankSymptoms;
-      // Sự kiện Quay lại
-      document.getElementById("btn-back-step1").onclick = () => window.location.hash = "#/step1";
-      // Sự kiện Tiếp tục
-      document.getElementById("btn-save-next-step2").onclick = () => {
-        saveStep2();
-        window.location.hash = "#/step3";
-      };
+  // Sự kiện tách triệu chứng bằng GPT
+  document.getElementById("btn-extract-symptoms").onclick = extractSymptoms;
+  // Sự kiện xếp hạng VAS giảm dần
+  document.getElementById("btn-rank-symptoms").onclick = rankSymptoms;
+  // Sự kiện Quay lại
+  document.getElementById("btn-back-step1").onclick = () => window.location.hash = "#/step1";
+  // Sự kiện Tiếp tục
+  document.getElementById("btn-save-next-step2").onclick = () => {
+    saveStep2();
+    window.location.hash = "#/step3";
+  };
 
-      renderStep2Content();
-    });
+  renderStep2Content();
 }
 
-// Gộp và hiển thị triệu chứng từng lần khám + hiện chart nếu có history
+// ----------- LOGIC GIỮ NGUYÊN -----------
+
 function renderStep2Content() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
 
@@ -59,7 +75,7 @@ async function extractSymptoms() {
   const raw = data?.steps?.step1?.symptoms || "";
 
   if (!raw.trim()) {
-    alert("⚠️ Không có dữ liệu triệu chứng để phân tích.");
+    alert(window.lang.step2.alert_no_symptom || "⚠️ Không có dữ liệu triệu chứng để phân tích.");
     return;
   }
 
@@ -86,7 +102,7 @@ Hãy tách ra danh sách các triệu chứng cụ thể, mỗi dòng ghi 1 tri�
     .filter(line => line.length > 0);
 
   if (!lines.length) {
-    alert("❌ GPT không trích xuất được triệu chứng.");
+    alert(window.lang.step2.alert_gpt_fail || "❌ GPT không trích xuất được triệu chứng.");
     return;
   }
 
@@ -166,7 +182,7 @@ function rankSymptoms() {
 // Lưu dữ liệu bước 2
 function saveStep2() {
   const key = localStorage.getItem("currentPatient");
-  if (!key) return alert("Chưa chọn hồ sơ!");
+  if (!key) return alert(window.lang.step2.alert_no_profile || "Chưa chọn hồ sơ!");
   const data = JSON.parse(localStorage.getItem(key) || "{}");
   data.steps = data.steps || {};
   data.steps.step2 = data.steps.step2 || {};
