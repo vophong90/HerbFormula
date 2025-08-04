@@ -3,11 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>HerbFormula</title>
-  <link rel="stylesheet" href="./assets/styles.css" />
+  <title>Hỗ trợ lập phương YHCT</title>
+
+  <!-- Tailwind + Chart.js như cũ -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
+  <script>Chart.register(window['chartjs-plugin-annotation']);</script>
+
+  <!-- dữ liệu nội bộ -->
+  <script src="./js/data/herbal_list.js"></script>
+  <script src="./js/data/doi_duoc_data.js"></script>
+  <script src="./js/data/organ_effects.js"></script>
+  <script src="./js/data/strengherb.js"></script>
 </head>
-<body>
-  <div id="app"></div>
+<body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
+  <div class="max-w-5xl mx-auto px-4 py-6 w-full">
+    <h1 class="text-3xl font-bold text-center mb-6">🧾 Ứng dụng hỗ trợ lập phương Y học cổ truyền</h1>
+
+    <!-- Tabs điều hướng -->
+    <div class="w-full flex justify-center gap-2 px-4 py-4 whitespace-nowrap">
+      <button class="step-tab" data-path="#/step0">B0: Hồ sơ</button>
+      <button class="step-tab" data-path="#/step1">B1: Lâm sàng</button>
+      <button class="step-tab" data-path="#/step2">B2: Đánh giá</button>
+      <button class="step-tab" data-path="#/step3">B3: Biện chứng</button>
+      <button class="step-tab" data-path="#/step4">B4: Gợi ý toa</button>
+      <button class="step-tab" data-path="#/step5">B5: Hiệu chỉnh</button>
+    </div>
+
+    <!-- nơi render nội dung từng bước -->
+    <div id="app"></div>
+  </div>
+
+  <!-- khởi động app -->
   <script type="module" src="./js/main.js"></script>
 </body>
 </html>
