@@ -1,284 +1,313 @@
-import { appState, saveState } from "../state.js";
+// step4.js: Đúng logic gốc, không module hóa, thao tác trực tiếp với localStorage, id field giữ nguyên
 
-/* ================== CẤU HÌNH API (nếu muốn gọi GPT) ================== */
-const API_BASE = "https://gpt-api-19xu.onrender.com"; // sửa nếu cần
-
-async function gptSuggestBySyndrome(syndrome) {
-  // Thử endpoint JSON hiện đại
-  try {
-    const res = await fetch(`${API_BASE}/suggest-herbs-by-syndrome`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ syndrome, max: 10, lang: "vi" }),
+export function renderStep4() {
+  fetch('./partials/step4.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('main-content').innerHTML = html;
+      populateStep4();
     });
-    if (res.ok) return await res.json(); // { items: [{name, dose?, note?}] }
-  } catch {}
-  // Thử endpoint PHP form-urlencoded cũ
-  try {
-    const form = new URLSearchParams();
-    form.set("action", "suggest_source_herbs");
-    form.set("syndrome", syndrome);
-    const res = await fetch(`${API_BASE}/gpt.php`, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form.toString(),
+}
+
+// Hàm gốc lấy từ index.html
+function populateStep4() {
+  const data = JSON.parse(localStorage.getItem("currentData") || "{}");
+
+  // Hội chứng từ bước 3
+  const syndrome = data.steps?.step3?.final || "(chưa xác định)";
+  const syndromeDiv = document.getElementById("confirmed-syndrome");
+  if (syndromeDiv) syndromeDiv.textContent = syndrome;
+
+  // Triệu chứng nổi bật
+  const symptoms = data.steps?.step2?.symptoms || [];
+  const sorted = [...symptoms].sort((a, b) => b.vas - a.vas);
+  const topSymptoms = sorted.slice(0, 5);
+
+  const ul = document.getElementById("step4-top-symptom-list");
+  if (ul) {
+    ul.innerHTML = "";
+    topSymptoms.forEach(s => {
+      const li = document.createElement("li");
+      li.textContent = `${s.symptom} (VAS ${s.vas})`;
+      ul.appendChild(li);
     });
-    if (res.ok) {
-      const t = await res.text();
-      try { return JSON.parse(t); } catch {
-        const items = t.split(/\r?\n/).map(s => s.trim()).filter(Boolean).slice(0, 10);
-        return { items: items.map(n => ({ name: n })) };
-      }
-    }
-  } catch {}
-  // Fallback để không vỡ app
-  return {
-    items: [
-      { name: "Sài hồ", dose: 8, note: "sơ can giải uất" },
-      { name: "Bạch truật", dose: 10, note: "kiện tỳ táo thấp" },
-      { name: "Phục linh", dose: 12, note: "lợi thấp" },
-    ],
-  };
-}
-
-async function gptSuggestBySymptom(symptom) {
-  try {
-    const res = await fetch(`${API_BASE}/suggest-herbs-by-symptom`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ symptom, max: 10, lang: "vi" }),
-    });
-    if (res.ok) return await res.json();
-  } catch {}
-  // Fallback
-  return {
-    items: [
-      { name: "Hương phụ", dose: 8, note: "lý khí chỉ thống" },
-      { name: "Chỉ xác", dose: 6, note: "hành khí tiêu bĩ" },
-      { name: "Cam thảo", dose: 4, note: "hoà trung" },
-    ],
-  };
-}
-
-/* ================== STATE STEP4 ================== */
-function ensureStep4() {
-  appState.steps ||= {};
-  appState.steps.step4 ||= {
-    s1: [], // [{name, note}]
-    s2: [],
-    s3: [],
-    final: [], // [{name, dose, note}]
-  };
-  return appState.steps.step4;
-}
-
-function topPrioritySymptom() {
-  const st2 = appState.steps?.step2;
-  if (!st2?.symptoms?.length) return "";
-  // lấy mục có VAS cao nhất
-  const sorted = [...st2.symptoms].sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
-  return sorted[0]?.text || "";
-}
-
-/* ================== RENDER CHÍNH ================== */
-async function loadPartial(path) {
-  const res = await fetch(path);
-  return await res.text();
-}
-
-export async function renderStep4(root) {
-  root.innerHTML = await loadPartial("/partials/step4.html");
-
-  // đổ ngữ cảnh
-  document.getElementById("b4-syndrome").value = appState.steps?.step3?.selectedSyndrome || "";
-  document.getElementById("b4-priority-symptom").value = topPrioritySymptom();
-
-  const st4 = ensureStep4();
-  renderSList("b4-s1-list", st4.s1);
-  renderSList("b4-s2-list", st4.s2);
-  renderSList("b4-s3-list", st4.s3);
-  renderFinalTable(st4.final);
-
-  // Wire buttons
-  document.getElementById("b4-btn-s1").onclick = onSuggestS1;
-  document.getElementById("b4-btn-s1-clear").onclick = () => clearSList("s1");
-  document.getElementById("b4-btn-s2").onclick = onSuggestS2;
-  document.getElementById("b4-btn-s2-clear").onclick = () => clearSList("s2");
-  document.getElementById("b4-btn-s3").onclick = onSuggestS3;
-  document.getElementById("b4-btn-s3-clear").onclick = () => clearSList("s3");
-
-  document.getElementById("b4-btn-merge").onclick = onMergeToFinal;
-  document.getElementById("b4-btn-clear-final").onclick = () => { ensureStep4().final = []; saveState(); renderFinalTable([]); };
-
-  document.getElementById("b4-btn-add").onclick = onAddCustom;
-  document.getElementById("b4-btn-back3").onclick = () => (location.hash = "#/step3");
-  document.getElementById("b4-btn-save").onclick = () => { saveState(); alert("✅ Đã lưu Bước 4."); };
-  document.getElementById("b4-btn-next5").onclick = () => { saveState(); location.hash = "#/step5"; };
-}
-
-/* ================== 6S — HANDLERS ================== */
-async function onSuggestS1() {
-  const syn = (appState.steps?.step3?.selectedSyndrome || "").trim();
-  if (!syn) return alert("Chưa có hội chứng ở Bước 3.");
-  const btn = document.getElementById("b4-btn-s1"); btn.disabled = true; btn.textContent = "Đang gợi ý…";
-  try {
-    const rsp = await gptSuggestBySyndrome(syn);
-    const items = normalizeItems(rsp?.items || []);
-    const st4 = ensureStep4();
-    st4.s1 = items;
-    saveState();
-    renderSList("b4-s1-list", st4.s1);
-  } finally {
-    btn.disabled = false; btn.textContent = "🤖 Gợi ý S1";
   }
-}
 
-async function onSuggestS2() {
-  const sym = topPrioritySymptom();
-  if (!sym) return alert("Chưa có triệu chứng ưu tiên (Bước 2).");
-  const btn = document.getElementById("b4-btn-s2"); btn.disabled = true; btn.textContent = "Đang gợi ý…";
-  try {
-    const rsp = await gptSuggestBySymptom(sym);
-    const items = normalizeItems(rsp?.items || []);
-    const st4 = ensureStep4();
-    st4.s2 = items;
-    saveState();
-    renderSList("b4-s2-list", st4.s2);
-  } finally {
-    btn.disabled = false; btn.textContent = "🤖 Gợi ý S2";
-  }
-}
+  // Nạp dữ liệu các ô đã có
+  const step4 = data.steps?.step4 || {};
+  const sixs = step4.sixs || {};
 
-function onSuggestS3() {
-  // Gợi ý S3 đơn giản: thêm Cam thảo điều hoà + Trần bì kiện tỳ (fallback)
-  const st4 = ensureStep4();
-  const base = [
-    { name: "Cam thảo", note: "hoà trung điều hoà", dose: 3 },
-    { name: "Trần bì", note: "lý khí hoà vị", dose: 6 },
+  const fields = [
+    ["final-gpt-formula", step4.finalGPT],
+    ["final-doctor-formula", step4.finalDoctor],
+    ["sixs-source", sixs.source],
+    ["sixs-symptom", sixs.symptom],
+    ["sixs-site", sixs.site],
+    ["sixs-strength", sixs.strength],
+    ["sixs-sideeffect", sixs.sideeffect],
+    ["sixs-secondary", sixs.secondary]
   ];
-  st4.s3 = base;
-  saveState();
-  renderSList("b4-s3-list", st4.s3);
+
+  fields.forEach(([id, value]) => {
+    const el = document.getElementById(id);
+    if (el) el.value = value || "";
+  });
+
+  setupHerbBarChartUI();
 }
 
-function clearSList(key) {
-  const st4 = ensureStep4();
-  st4[key] = [];
-  saveState();
-  renderSList(`b4-${key}-list`, []);
-}
+// Gợi ý pháp trị YHCT
+window.autoSuggestMethod = async function() {
+  const data = JSON.parse(localStorage.getItem("currentData") || "{}");
+  const syndrome = data.steps?.step3?.final?.trim();
+  const symptoms = data.steps?.step2?.symptoms || [];
+  const outputBox = document.getElementById("treatmethod-gpt");
 
-/* ================== GHÉP TOA ================== */
-function onMergeToFinal() {
-  const st4 = ensureStep4();
-  const bucket = new Map(); // name -> {name, dose, note}
-  const add = (it) => {
-    const name = it.name?.trim();
-    if (!name) return;
-    const prev = bucket.get(name) || { name, dose: 0, note: "" };
-    // cộng dồn liều nếu trùng
-    prev.dose = Number(prev.dose || 0) + Number(it.dose || 0) || undefined;
-    prev.note = prev.note || it.note || "";
-    bucket.set(name, prev);
-  };
-  [...st4.s1, ...st4.s2, ...st4.s3].forEach(add);
-
-  // Nếu mục nào chưa có dose → đặt mặc định 6g
-  const merged = Array.from(bucket.values()).map(x => ({ ...x, dose: x.dose ?? 6 }));
-  st4.final = merged;
-  saveState();
-  renderFinalTable(st4.final);
-}
-
-/* ================== UI LIST & FINAL TABLE ================== */
-function renderSList(ulId, items) {
-  const box = document.getElementById(ulId);
-  if (!box) return;
-  if (!items?.length) {
-    box.innerHTML = `<li class="text-gray-500">— trống —</li>`;
+  if (!syndrome || symptoms.length === 0) {
+    outputBox.value = "⚠️ Thiếu dữ liệu hội chứng hoặc triệu chứng.";
     return;
   }
-  box.innerHTML = "";
-  items.forEach(it => {
-    const li = document.createElement("li");
-    li.innerHTML = `<span class="font-medium">${escapeHTML(it.name)}</span>${
-      it.dose ? ` — ${Number(it.dose)}g` : ""
-    }${it.note ? ` <span class="text-gray-600">(${escapeHTML(it.note)})</span>` : ""}`;
-    box.appendChild(li);
+
+  outputBox.value = "⏳ Đang gợi ý pháp trị, vui lòng chờ...";
+
+  const symptomList = symptoms
+    .sort((a, b) => b.vas - a.vas)
+    .map((s, i) => `${i + 1}. ${s.symptom} (VAS: ${s.vas})`)
+    .join("\n");
+
+  const prompt = `
+Bạn là chuyên gia Y học cổ truyền.
+
+Bệnh nhân được chẩn đoán theo YHCT là: **${syndrome}**
+
+Danh sách các triệu chứng đã ghi nhận, sắp xếp theo mức độ VAS:
+
+${symptomList}
+
+Dựa trên chẩn đoán và triệu chứng, hãy xác định các pháp trị phù hợp theo nguyên tắc biện chứng luận trị. Pháp trị cần chia làm hai nhóm rõ ràng:
+
+🔹 **Trị bản** (nhằm điều trị cơ chế sinh bệnh, gốc rễ bệnh theo lý luận tạng phủ, khí huyết, tà chính, hư thực...).
+
+🔹 **Trị tiêu** (nhằm điều trị triệu chứng hiện tại đang gây khó chịu nhiều nhất).
+
+Yêu cầu:
+- Chỉ chọn trong các pháp trị chuẩn của Trung y, không được sáng tạo.
+- Ưu tiên trình bày bằng thuật ngữ Hán Việt.
+- Không viết thừa, không lan man.
+
+Trình bày kết quả như sau:
+
+🔸 **Trị bản:**  
+– Pháp trị: ...  
+– Lý do chọn pháp trị: ...
+
+🔸 **Trị tiêu:**  
+– Pháp trị: ...  
+– Lý do chọn pháp trị: ...
+`;
+
+  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ prompt: prompt })
+  });
+
+  const result = await res.json();
+  const reply = result.choices?.[0]?.message?.content || "❌ GPT không trả về kết quả.";
+
+  outputBox.value = reply;
+}
+
+// Tra cứu đối dược
+window.searchDoiDuocByKeyword = function() {
+  const input = document.getElementById("keyword-doiduoc");
+  const keyword = input.value.trim().toLowerCase();
+  const resultBox = document.getElementById("result-doiduoc");
+
+  if (!keyword) {
+    resultBox.value = "⚠️ Vui lòng nhập từ khóa.";
+    return;
+  }
+
+  const keywords = keyword.split(/\s+/).filter(k => k);
+
+  const matches = (window.doiDuocData || []).filter(item => {
+    const chutriText = item.chutri?.toLowerCase() || "";
+    return keywords.every(word => chutriText.includes(word));
+  });
+
+  if (matches.length === 0) {
+    resultBox.value = "❌ Không tìm thấy kết quả phù hợp.";
+    return;
+  }
+
+  resultBox.value = matches.map(item =>
+    `📌 Đối dược: ${item.doiduoc}\n📋 Chủ trị: ${item.chutri}`
+  ).join("\n\n");
+}
+
+// Vẽ biểu đồ vị thuốc theo pháp trị
+window.setupHerbBarChartUI = function() {
+  const select = document.getElementById("effectSelector");
+  const effects = Object.keys(window.herbsByEffect || {});
+
+  select.innerHTML = '<option value="">-- Chọn pháp trị --</option>';
+  for (const eff of effects) {
+    const option = document.createElement("option");
+    option.value = eff;
+    option.textContent = eff;
+    select.appendChild(option);
+  }
+
+  select.addEventListener("change", () => {
+    const selected = select.value;
+    if (selected) {
+      drawHerbBarChart(selected);
+    }
   });
 }
 
-function renderFinalTable(items) {
-  const tbody = document.getElementById("b4-final-tbody");
-  tbody.innerHTML = "";
-  (items || []).forEach((it, idx) => {
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
-      <td class="border px-2 py-1">
-        <input data-k="name" data-i="${idx}" value="${escapeAttr(it.name || "")}" class="w-full border rounded px-2 py-1">
-      </td>
-      <td class="border px-2 py-1 w-28">
-        <input data-k="dose" data-i="${idx}" type="number" step="0.5" value="${it.dose ?? ""}" class="w-full border rounded px-2 py-1 text-right">
-      </td>
-      <td class="border px-2 py-1">
-        <input data-k="note" data-i="${idx}" value="${escapeAttr(it.note || "")}" class="w-full border rounded px-2 py-1">
-      </td>
-      <td class="border px-2 py-1 text-center">
-        <button data-del="${idx}" class="bg-red-600 text-white px-2 py-1 rounded">Xoá</button>
-      </td>
-    `;
-    // events
-    tr.querySelectorAll("input[data-k]").forEach(inp => {
-      inp.addEventListener("input", (e) => {
-        const i = Number(e.target.dataset.i);
-        const k = e.target.dataset.k;
-        const st4 = ensureStep4();
-        if (k === "dose") {
-          st4.final[i][k] = e.target.value === "" ? undefined : Number(e.target.value);
-        } else {
-          st4.final[i][k] = e.target.value;
-        }
-        saveState();
-      });
-    });
-    tr.querySelector("[data-del]").onclick = (e) => {
-      const i = Number(e.currentTarget.getAttribute("data-del"));
-      const st4 = ensureStep4();
-      st4.final.splice(i, 1);
-      saveState();
-      renderFinalTable(st4.final);
+window.drawHerbBarChart = function(effect) {
+  const data = window.herbsByEffect?.[effect] || [];
+  const labels = data.map(d => d.vietnamese);
+  const scores = data.map(d => d.score);
+
+  const canvas = document.getElementById("herbBarChart");
+  const ctx = canvas.getContext("2d");
+
+  if (window.herbChartInstance) {
+    window.herbChartInstance.destroy();
+  }
+
+  const columnWidth = 60;
+  const chartWidth = Math.max(400, labels.length * columnWidth);
+  canvas.removeAttribute("style");
+  canvas.setAttribute("width", chartWidth);
+  canvas.setAttribute("height", 300);
+
+  const enrichedData = data.map(d => {
+    const matched = window.herbalData.find(h => h.herb === d.vietnamese);
+    return {
+      ...d,
+      tukhi: matched?.tukhi ?? null,
+      sd_dose: matched?.sd_dose ?? null,
+      latin: matched?.latin ?? null
     };
-    tbody.appendChild(tr);
+  });
+
+  function tukhiToColor(tukhi) {
+    if (tukhi == null) return "white";
+    const colors = [
+      "#2c7bb6", "#00a6ca", "#00ccbc", "#ffffbf",
+      "#fdae61", "#f46d43", "#d73027"
+    ];
+    if (tukhi <= -3.5) return colors[0];
+    if (tukhi <= -2)   return colors[1];
+    if (tukhi <= -0.5) return colors[2];
+    if (tukhi < 0.5)   return colors[3];
+    if (tukhi < 2)     return colors[4];
+    if (tukhi < 3.5)   return colors[5];
+    return colors[6];
+  }
+
+  const backgroundColors = enrichedData.map(d =>
+    d.tukhi == null ? "white" : tukhiToColor(d.tukhi)
+  );
+  const borderColors = enrichedData.map(d =>
+    d.tukhi == null ? "#cccccc" : "black"
+  );
+
+  requestAnimationFrame(() => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    window.herbChartInstance = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: "Điểm mạnh (score)",
+          data: scores,
+          backgroundColor: backgroundColors,
+          borderColor: borderColors,
+          borderWidth: 2,
+          barThickness: 40
+        }]
+      },
+      options: {
+        responsive: false,
+        maintainAspectRatio: false,
+        scales: {
+          x: {
+            ticks: { autoSkip: false },
+            grid: { display: false }
+          },
+          y: {
+            beginAtZero: true,
+            grid: { display: true }
+          }
+        },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function(ctx) {
+                const herb = enrichedData[ctx.dataIndex];
+                const latin = herb.latin || "–";
+                const dose = herb.sd_dose != null ? `${herb.sd_dose}g` : "Không rõ liều";
+                return `${herb.vietnamese} (${latin}):\nĐiểm: ${herb.score}, Liều: ${dose}`;
+              }
+            }
+          }
+        }
+      }
+    });
   });
 }
 
-function onAddCustom() {
-  const name = document.getElementById("b4-custom-herb").value.trim();
-  const dose = document.getElementById("b4-custom-dose").value.trim();
-  if (!name) return;
-  const st4 = ensureStep4();
-  st4.final.push({ name, dose: dose ? Number(dose) : undefined, note: "" });
-  saveState();
-  renderFinalTable(st4.final);
-  document.getElementById("b4-custom-herb").value = "";
-  document.getElementById("b4-custom-dose").value = "";
+// Tổng hợp 6S và loại trùng
+window.renderFinalGPTFormula = function() {
+  const fields = [
+    "sixs-source",
+    "sixs-symptom",
+    "sixs-site",
+    "sixs-strength",
+    "sixs-sideeffect",
+    "sixs-secondary"
+  ];
+
+  const herbSet = new Set();
+  for (const id of fields) {
+    const value = document.getElementById(id)?.value || "";
+    const herbs = value.split(",").map(h => h.trim()).filter(h => h);
+    herbs.forEach(h => herbSet.add(h));
+  }
+  const finalFormula = Array.from(herbSet).join(", ");
+  const outputBox = document.getElementById("final-gpt-formula");
+  if (outputBox) outputBox.value = finalFormula;
 }
 
-/* ================== HELPERS ================== */
-function normalizeItems(arr) {
-  return arr
-    .map(x => ({
-      name: String(x.name || "").trim(),
-      dose: x.dose != null ? Number(x.dose) : undefined,
-      note: x.note ? String(x.note) : "",
-    }))
-    .filter(x => x.name);
-}
-function escapeHTML(s) {
-  return String(s).replace(/[&<>"']/g, (m) => (
-    { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;" }[m]
-  ));
-}
-function escapeAttr(s) {
-  return escapeHTML(s).replace(/"/g, "&quot;");
+// Lưu Bước 4
+window.saveStep4 = function() {
+  const data = JSON.parse(localStorage.getItem("currentData") || "{}");
+  // Thu thập dữ liệu từ các ô 6S
+  const sixs = {
+    source: document.getElementById("sixs-source")?.value || "",
+    symptom: document.getElementById("sixs-symptom")?.value || "",
+    site: document.getElementById("sixs-site")?.value || "",
+    strength: document.getElementById("sixs-strength")?.value || "",
+    sideeffect: document.getElementById("sixs-sideeffect")?.value || "",
+    secondary: document.getElementById("sixs-secondary")?.value || ""
+  };
+  // Toa thuốc tổng hợp GPT và bác sĩ
+  const finalGPT = document.getElementById("final-gpt-formula")?.value || "";
+  const finalDoctor = document.getElementById("final-doctor-formula")?.value || "";
+  data.steps = data.steps || {};
+  data.steps.step4 = {
+    sixs: sixs,
+    finalGPT: finalGPT,
+    finalDoctor: finalDoctor
+  };
+  localStorage.setItem("currentData", JSON.stringify(data));
 }
