@@ -29,7 +29,7 @@ export function renderStep5(root) {
       </div>
       <div class="mb-4">
         <button id="btn-autofill-step5-note" class="text-blue-700 hover:underline mt-2">
-          📝 ${window.lang.step5.note_btn}
+           ${window.lang.step5.note_btn}
         </button>
         <textarea id="step5-note" class="w-full border rounded px-3 py-2" rows="2" placeholder="${window.lang.step5.note_placeholder}"></textarea>
       </div>
@@ -37,20 +37,20 @@ export function renderStep5(root) {
     <div id="formula-analysis-charts" class="mt-6 space-y-6">
       <div class="my-4">
         <button id="btn-render-tukhi" class="text-left text-lg font-semibold text-blue-700 hover:text-blue-900 hover:underline">
-          1️⃣ ${window.lang.step5.analysis.tukhi_btn}
+           ${window.lang.step5.analysis.tukhi_btn}
         </button>
         <canvas id="chart-temperature" width="1000" height="80" class="mt-2 border rounded shadow"></canvas>
       </div>
       <div class="my-4 grid grid-cols-2 gap-4">
         <div>
           <button id="btn-render-flavor" class="text-blue-700 hover:underline text-lg font-semibold mb-2">
-            📊 ${window.lang.step5.analysis.flavor_btn}
+            ${window.lang.step5.analysis.flavor_btn}
           </button>
           <canvas id="chart-flavor" class="border rounded shadow" style="width: 100%; height: 300px;"></canvas>
         </div>
         <div>
           <button id="btn-render-meridian" class="text-blue-700 hover:underline text-lg font-semibold mb-2">
-            📈 ${window.lang.step5.analysis.meridian_btn}
+           ${window.lang.step5.analysis.meridian_btn}
           </button>
           <canvas id="chart-meridian" class="border rounded shadow" style="width: 100%; height: 300px;"></canvas>
         </div>
@@ -59,7 +59,7 @@ export function renderStep5(root) {
         <div class="flex flex-col">
           <div class="text-left mb-2">
             <button id="btn-render-direction" class="text-blue-700 hover:underline text-lg font-semibold">
-              🧭 ${window.lang.step5.analysis.direction_btn}
+               ${window.lang.step5.analysis.direction_btn}
             </button>
           </div>
           <div class="w-full border rounded shadow overflow-hidden" style="height: 360px;">
@@ -69,7 +69,7 @@ export function renderStep5(root) {
         <div class="flex flex-col">
           <div class="text-left mb-2">
             <button id="btn-render-effect" class="text-blue-700 hover:underline text-lg font-semibold">
-              🌿 ${window.lang.step5.analysis.effect_btn}
+               ${window.lang.step5.analysis.effect_btn}
             </button>
           </div>
           <div class="w-full border rounded shadow overflow-hidden" style="height: 360px;">
