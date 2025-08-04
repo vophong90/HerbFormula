@@ -1,32 +1,34 @@
-import { appState, saveState } from "../state.js";
+// /js/steps/step1.js
 
-async function loadPartial(path) {
-  const res = await fetch(path);
-  return await res.text();
+export function renderStep1() {
+  fetch('./partials/step1.html')
+    .then(res => res.text())
+    .then(html => {
+      document.getElementById('main-content').innerHTML = html;
+
+      // Đổ dữ liệu cũ nếu có
+      if (window.currentData) {
+        document.getElementById('patient-name').value = window.currentData.patientName || '';
+        document.getElementById('birth-year').value = window.currentData.birthYear || '';
+        document.getElementById('gender').value = window.currentData.gender || '';
+        if (window.currentData.steps && window.currentData.steps.step1) {
+          document.getElementById('symptoms').value = window.currentData.steps.step1.symptoms || '';
+        }
+      }
+    });
 }
 
-export async function renderStep1(root) {
-  root.innerHTML = await loadPartial("/partials/step1.html");
-
-  // đổ dữ liệu
-  document.getElementById("patient-name").value = appState.name || "";
-  document.getElementById("patient-birth").value = appState.birth || "";
-  document.getElementById("patient-gender").value = appState.gender || "";
-  document.getElementById("patient-symptoms").value = appState.steps?.step1?.symptoms || "";
-
-  // điều hướng
-  document.getElementById("btn-back0").onclick = () => location.hash = "#/step0";
-  document.getElementById("btn-next2").onclick = () => {
-    const birth = document.getElementById("patient-birth").value;
-    const gender = document.getElementById("patient-gender").value;
-    const symptoms = document.getElementById("patient-symptoms").value.trim();
-
-    appState.birth = birth;
-    appState.gender = gender;
-    appState.steps = appState.steps || {};
-    appState.steps.step1 = { birth, gender, symptoms };
-
-    saveState();
-    location.hash = "#/step2";
-  };
+// Lưu dữ liệu Bước 1
+window.saveStep1 = function() {
+  if (!window.currentData) window.currentData = {};
+  window.currentData.patientName = document.getElementById('patient-name').value.trim();
+  window.currentData.birthYear = document.getElementById('birth-year').value.trim();
+  window.currentData.gender = document.getElementById('gender').value;
+  // Lưu triệu chứng vào steps.step1
+  const symptoms = document.getElementById('symptoms').value.trim();
+  window.currentData.steps = window.currentData.steps || {};
+  window.currentData.steps.step1 = { symptoms };
+  // Lưu vào localStorage
+  localStorage.setItem('currentData', JSON.stringify(window.currentData));
+  alert("✅ Đã lưu thông tin lâm sàng!");
 }
