@@ -19,7 +19,7 @@ export function renderStep3(root) {
         <div id="tree-extra-questions" class="mt-4 space-y-3"></div>
       </div>
       <div>
-        <label class="font-semibold block mb-1">${window.lang.step3.approach_gpt}</label>
+        <label class="font-semibold block mb-1">${window.lang.step3.gpt_suggest}</label>
         <button id="btn-auto-classic" class="bg-green-600 text-white px-4 py-2 rounded mt-2">
           ${window.lang.step3.gpt_btn}
         </button>
