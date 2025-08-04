@@ -1,0 +1,26 @@
+<h2 class="text-2xl font-semibold mb-4">🧪 Bước 2: Đánh giá VAS cho triệu chứng</h2>
+
+<div class="mb-4 flex flex-wrap gap-2">
+  <button id="btn-extract" class="bg-emerald-600 text-white px-3 py-2 rounded">🧠 Tách triệu chứng</button>
+  <button id="btn-rank" class="bg-indigo-600 text-white px-3 py-2 rounded">🔃 Sắp xếp theo VAS</button>
+  <button id="btn-clear" class="bg-gray-600 text-white px-3 py-2 rounded">🧹 Xoá tất cả</button>
+</div>
+
+<p class="text-sm text-gray-600 mb-2">
+  * Mỗi triệu chứng là một dòng ở Bước 1. Nhấn “Tách triệu chứng”, sau đó kéo thanh VAS 0–10 cho từng triệu chứng.
+</p>
+
+<div id="symptom-vas-list" class="space-y-3 mb-6"></div>
+
+<div class="bg-white rounded border p-4">
+  <h3 class="font-semibold mb-2">📈 Biểu đồ VAS (lần hiện tại)</h3>
+  <canvas id="vas-chart" height="180"></canvas>
+</div>
+
+<div class="mt-6 flex justify-between">
+  <button id="btn-back1" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại Bước 1</button>
+  <div class="space-x-2">
+    <button id="btn-save" class="bg-green-600 text-white px-4 py-2 rounded">💾 Lưu</button>
+    <button id="btn-next3" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Tiếp tục ➡ Bước 3</button>
+  </div>
+</div>
