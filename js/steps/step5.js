@@ -3,14 +3,12 @@ export function renderStep5(root) {
     .then(res => res.text())
     .then(html => {
       root.innerHTML = html;
-      populateStep5();
-
+      // Các nút điều hướng
       document.getElementById("btn-back-step4").onclick = () => window.location.hash = "#/step4";
       document.getElementById("btn-save-step5").onclick = () => {
         saveStep5();
         downloadCurrentDataAsJSON();
       };
-
       document.getElementById("btn-add-final-herb").onclick = addFinalHerb;
       document.getElementById("btn-autofill-step5-note").onclick = autoFillStep5Note;
 
@@ -20,14 +18,25 @@ export function renderStep5(root) {
       document.getElementById("btn-render-meridian").onclick = renderChartMeridian;
       document.getElementById("btn-render-direction").onclick = renderChartDirection;
       document.getElementById("btn-render-effect").onclick = renderChartEffect;
+
+      populateStep5();
     });
 }
 
-// --- Quản lý lịch sử toa cũ và toa hiện tại ---
+// --------- Hàm lấy danh sách vị thuốc hiệu chỉnh cuối cùng ---------
+function getFinalHerbList() {
+  try {
+    return JSON.parse(document.getElementById("final-herb-list").dataset.herbs || "[]");
+  } catch { return []; }
+}
+
+// --------- HIỂN THỊ LỊCH SỬ TOA CŨ & TOA HIỆN TẠI ---------
 export function populateStep5() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
-  // Lịch sử toa cũ
+
+  // PHẦN 1: Lịch sử toa thuốc
   const container = document.getElementById("previous-formulas");
+  if (!container) return;
   container.innerHTML = "";
   const history = data.steps?.step2?.history || [];
   history.forEach((entry, i) => {
@@ -50,25 +59,23 @@ export function populateStep5() {
     container.appendChild(box);
   });
 
-  // Toa đề xuất từ bước 4
+  // PHẦN 2: Toa bác sĩ đề xuất
   document.getElementById("step5-doctor-draft").value = data.steps?.step4?.finalDoctor || "";
 
-  // Parse thành danh sách vị thuốc
+  // PHẦN 3: Đổ lại danh sách vị thuốc cuối cùng (edit)
   parseDoctorDraftFormula();
 
-  // Lấy lại thông tin lưu lần trước
+  // PHẦN 4: Gán lại usage/note đã lưu
   document.getElementById("step5-usage").value = data.steps?.step5?.usage || "";
   document.getElementById("step5-note").value = data.steps?.step5?.note || "";
 }
 
-// --- Quản lý danh sách vị thuốc ---
+// --------- XỬ LÝ DANH SÁCH VỊ THUỐC ---------
 function parseDoctorDraftFormula() {
   const draft = document.getElementById("step5-doctor-draft")?.value || "";
   const container = document.getElementById("final-herb-list");
   if (!draft || !container) return;
-
   const herbs = [];
-  // Tách tên vị và liều, ví dụ "Đương quy 12, Bạch truật 10"
   const items = draft.split(/[,+]/);
   items.forEach(item => {
     const parts = item.trim().match(/^(.+?)\s*(\d+(?:[.,]\d+)?)/);
@@ -112,7 +119,7 @@ function renderFinalHerbList(herbs) {
   container.dataset.herbs = JSON.stringify(herbs);
 }
 
-// Thêm vị thuốc mới
+// --------- Thêm vị thuốc mới ---------
 function addFinalHerb() {
   const name = document.getElementById("final-new-herb").value.trim();
   const dose = document.getElementById("final-new-dose").value.trim();
@@ -125,20 +132,18 @@ function addFinalHerb() {
   document.getElementById("final-new-dose").value = "";
 }
 
-// Ghi chú tự động
+// --------- Ghi chú tự động ---------
 function autoFillStep5Note() {
   document.getElementById("step5-note").value += "\nĐã kiểm tra và hiệu chỉnh theo đáp ứng lâm sàng.";
 }
 
-// Lưu bước 5 và export JSON
+// --------- Lưu dữ liệu bước 5 và xuất file JSON ---------
 function saveStep5() {
   const key = localStorage.getItem("currentPatient");
   if (!key) return alert("Chưa chọn hồ sơ!");
   const data = JSON.parse(localStorage.getItem(key) || "{}");
-  // Danh sách vị thuốc
   const herbs = JSON.parse(document.getElementById("final-herb-list").dataset.herbs || "[]");
   const finalFormula = herbs.map(h => `${h.name} ${h.dose}`).join(", ");
-  // Các trường khác
   const usage = document.getElementById("step5-usage").value;
   const note = document.getElementById("step5-note").value;
   data.steps = data.steps || {};
@@ -158,8 +163,9 @@ function downloadCurrentDataAsJSON() {
   URL.revokeObjectURL(url);
 }
 
-// ================== CÁC BIỂU ĐỒ PHÂN TÍCH TOA ==================
+// ======================= BIỂU ĐỒ PHÂN TÍCH TOA =======================
 
+// 1. TỨ KHÍ
 function renderChartTemperature() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
@@ -205,6 +211,7 @@ function renderChartTemperature() {
   }
 }
 
+// 2. NGŨ VỊ
 function renderChartFlavor() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
@@ -248,6 +255,7 @@ function renderChartFlavor() {
   }
 }
 
+// 3. QUY KINH
 function renderChartMeridian() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
@@ -292,6 +300,7 @@ function renderChartMeridian() {
   }
 }
 
+// 4. THĂNG – GIÁNG – PHÙ – TRẦM
 function renderChartDirection() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
@@ -343,6 +352,7 @@ function renderChartDirection() {
   }
 }
 
+// 5. TÁC DỤNG YHCT
 function renderChartEffect() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbsByEffect) {
@@ -381,11 +391,4 @@ function renderChartEffect() {
   if (missing.length) {
     alert("Một số vị không phân tích được:\n" + missing.join("\n"));
   }
-}
-
-// ------ HÀM TIỆN ÍCH LẤY DANH SÁCH VỊ THUỐC ĐANG HIỆU CHỈNH ------
-function getFinalHerbList() {
-  try {
-    return JSON.parse(document.getElementById("final-herb-list").dataset.herbs || "[]");
-  } catch { return []; }
 }
