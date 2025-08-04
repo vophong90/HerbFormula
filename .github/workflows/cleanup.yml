@@ -1,0 +1,15 @@
+name: Cleanup old workflow runs
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 15 * * *"  # chạy mỗi ngày 03:00 UTC
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: Mattraks/delete-workflow-runs@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: vophong90/HerbFormula
+          retain_days: 0          # 0 = xóa tất cả
+          keep_minimum_runs: 0
