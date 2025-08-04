@@ -11,9 +11,9 @@ export function renderStep3(root) {
     <!-- 🧪 Phân tích hội chứng hiện tại -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
       <div>
-        <label class="font-semibold block mb-1">${window.lang.step3.analyze_tree}</label>
+        <label class="font-semibold block mb-1">${window.lang.step3.tree_label}</label>
         <button id="btn-auto-tree" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
-          ${window.lang.step3.tree_btn}
+          ${window.lang.step3.analyze_tree}
         </button>
         <textarea id="syndrome-model" rows="3" class="w-full border rounded px-3 py-2" placeholder="${window.lang.step3.model_placeholder}"></textarea>
         <div id="tree-extra-questions" class="mt-4 space-y-3"></div>
