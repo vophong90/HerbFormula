@@ -4,7 +4,7 @@ export function renderStep3(root) {
 
     <!-- 🕘 Lịch sử hội chứng đã chẩn đoán -->
     <div class="mb-6">
-      <h3 class="text-lg font-semibold mb-2">${window.lang.step3.history}</h3>
+      <h3 class="text-lg font-semibold mb-2">${window.lang.step3.past_syndrome_title}</h3>
       <ul id="past-syndrome-list" class="list-disc list-inside text-gray-700 text-sm"></ul>
     </div>
 
