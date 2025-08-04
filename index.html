@@ -5,18 +5,82 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Hỗ trợ lập phương YHCT</title>
 
-  <!-- Tailwind + Chart.js như cũ -->
+  <!-- UI libs -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Chart.js + annotation -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-annotation@1.4.0"></script>
   <script>Chart.register(window['chartjs-plugin-annotation']);</script>
+
+  <!-- i18n strings -->
   <script src="js/lang/lang_vi.js"></script>
   <script src="js/lang/lang_zh.js"></script>
 
-  <!-- dữ liệu nội bộ -->
-  <script src="./js/data/herbal_list.js"></script>
-  <script src="./js/data/doi_duoc_data.js"></script>
-  <script src="./js/data/strengherb.js"></script>
+  <!-- Nạp động dữ liệu theo ngôn ngữ -->
+  <script>
+    // Cấu hình đường dẫn dữ liệu cho từng ngôn ngữ
+    const DATA_FILES = {
+      vi: [
+        "./js/data/vi/herbal_list.vi.js",
+        "./js/data/vi/doi_duoc_data.vi.js",
+        "./js/data/vi/strengherb.vi.js",
+      ],
+      zh: [
+        "./js/data/zh/herbal_list.zh.js",
+        "./js/data/zh/doi_duoc_data.zh.js",
+        "./js/data/zh/strengherb.zh.js",
+      ],
+    };
+
+    // Ngôn ngữ đang dùng
+    window.langCode = "vi";
+
+    // Xoá biến dữ liệu toàn cục nếu có (tránh trộn khi đổi ngôn ngữ)
+    function unloadDataGlobals() {
+      try {
+        delete window.herbalList;
+        delete window.doiDuocData;
+        delete window.strengHerb;
+      } catch(e) {
+        window.herbalList = null;
+        window.doiDuocData = null;
+        window.strengHerb = null;
+      }
+    }
+
+    // Nạp tuần tự các file dữ liệu theo ngôn ngữ
+    function loadDataForLang(lang) {
+      if (!DATA_FILES[lang]) {
+        console.warn("Thiếu cấu hình dữ liệu cho ngôn ngữ:", lang);
+        return Promise.resolve();
+      }
+      // Gỡ các script dữ liệu cũ nếu có
+      document.querySelectorAll('script[data-i18n-data="1"]').forEach(s => s.remove());
+      unloadDataGlobals();
+
+      // Chèn script theo thứ tự để đảm bảo phụ thuộc
+      return DATA_FILES[lang].reduce((p, src) => {
+        return p.then(() => new Promise((resolve, reject) => {
+          const s = document.createElement("script");
+          s.src = src;
+          s.async = false;
+          s.defer = false;
+          s.dataset.i18nData = "1";
+          s.onload = resolve;
+          s.onerror = () => reject(new Error("Không tải được: " + src));
+          document.head.appendChild(s);
+        }));
+      }, Promise.resolve()).then(() => {
+        window.langCode = lang;
+        // Thông báo cho app (main.js) biết dữ liệu đã sẵn sàng
+        window.dispatchEvent(new CustomEvent("i18n-data-loaded", { detail: { lang } }));
+      });
+    }
+
+    // Nạp dữ liệu ban đầu (VI) trước khi main.js chạy
+    window._initialDataPromise = loadDataForLang(window.langCode);
+  </script>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
 
@@ -51,47 +115,60 @@
             data-path="#/step5"><span class="mr-1">🛠️</span>B5: Hiệu chỉnh</button>
         </nav>
       </div>
-      
-      <!-- nơi render nội dung từng bước -->
+
+      <!-- Nơi render nội dung từng bước -->
       <div id="app"></div>
     </div>
   </div>
 
-  <!-- khởi động app -->
+  <!-- Khởi động app (nên await _initialDataPromise trong main.js trước khi render) -->
   <script type="module" src="./js/main.js"></script>
-  
+
   <footer class="mt-16 border-t bg-gray-100 text-center text-sm text-gray-600 py-6 shadow-inner">
     👨‍💻 Thiết kế bởi <strong>Võ Thanh Phong</strong> với sự hỗ trợ của <strong>ChatGPT</strong>.<br>
     © <span id="currentYear"></span> Bản quyền thuộc về <strong>Võ Thanh Phong</strong>.
   </footer>
+
+  <!-- Năm hiện tại -->
   <script>
     document.getElementById("currentYear").textContent = new Date().getFullYear();
   </script>
 
-  <!-- Đổi ngôn ngữ cho tiêu đề app và tab navigation khi chuyển lang -->
+  <!-- Đổi ngôn ngữ cho tiêu đề app, tabs + nạp lại dữ liệu -->
   <script>
-    // Chỉ chạy đoạn này nếu bạn muốn đổi text cho tiêu đề app và tab ngay cả khi chưa vào JS động
     function updateAppNavLang() {
-      // Đổi tiêu đề app
       if (window.lang && window.lang.app_title)
         document.getElementById('main-app-title').textContent = window.lang.app_title;
-      // Đổi các tab
+
       const stepTabs = document.querySelectorAll('.step-tab');
       if (window.lang && window.lang.step_tab && stepTabs.length === window.lang.step_tab.length) {
         stepTabs.forEach((btn, i) => {
-          // Giữ icon
           const icon = btn.querySelector('span')?.outerHTML || '';
           btn.innerHTML = icon + window.lang.step_tab[i];
         });
       }
     }
-    // Đăng ký sự kiện khi đổi ngôn ngữ
+
+    // Lắng nghe chọn ngôn ngữ
     document.getElementById('lang-select').addEventListener('change', function() {
-      window.lang = (this.value === 'zh') ? window.lang_zh : window.lang_vi;
+      const newLang = (this.value === 'zh') ? 'zh' : 'vi';
+      window.lang = (newLang === 'zh') ? window.lang_zh : window.lang_vi;
       updateAppNavLang();
-      // Nếu đã khởi động app bằng JS module, các bước sẽ tự render lại, không cần làm thêm ở đây.
+
+      // Nạp lại dữ liệu tương ứng ngôn ngữ rồi render lại
+      loadDataForLang(newLang)
+        .then(() => {
+          // Nếu main.js có hàm re-render riêng, có thể gọi: window.app?.rerender?.();
+          // Mặc định dùng hashchange để buộc render lại theo route hiện tại
+          window.dispatchEvent(new Event("hashchange"));
+        })
+        .catch(err => {
+          alert("Lỗi nạp dữ liệu cho ngôn ngữ mới: " + err.message);
+          console.error(err);
+        });
     });
-    // Khởi tạo lần đầu
+
+    // Khởi tạo lần đầu (VI)
     window.lang = window.lang_vi;
     updateAppNavLang();
   </script>
