@@ -1,32 +1,31 @@
-<h2 class="text-2xl font-semibold mb-4">📋 Bước 1: Nhập thông tin lâm sàng</h2>
+<!-- /partials/step1.html -->
+<div id="step-1" class="step-section">
+  <h2 class="text-2xl font-semibold mb-4">🩺 Bước 1: Nhập thông tin lâm sàng</h2>
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-  <div>
-    <label class="font-medium">👤 Họ tên:</label>
-    <input id="patient-name" type="text" disabled class="w-full border rounded px-3 py-2 bg-gray-100">
+  <div class="mb-4">
+    <label class="block text-sm font-medium mb-1">Họ tên bệnh nhân:</label>
+    <input id="patient-name" type="text" class="w-full border rounded px-3 py-2" placeholder="Nhập họ tên..." />
   </div>
-  <div>
-    <label class="font-medium">🎂 Năm sinh:</label>
-    <input id="patient-birth" type="number" placeholder="VD: 1985" class="w-full border rounded px-3 py-2">
+  <div class="mb-4">
+    <label class="block text-sm font-medium mb-1">Năm sinh:</label>
+    <input id="birth-year" type="number" class="w-full border rounded px-3 py-2" placeholder="VD: 1982" />
   </div>
-  <div>
-    <label class="font-medium">🚻 Giới tính:</label>
-    <select id="patient-gender" class="w-full border rounded px-3 py-2">
-      <option value="">-- Chọn --</option>
+  <div class="mb-4">
+    <label class="block text-sm font-medium mb-1">Giới tính:</label>
+    <select id="gender" class="w-full border rounded px-3 py-2">
+      <option value="">— chọn —</option>
       <option value="Nam">Nam</option>
       <option value="Nữ">Nữ</option>
       <option value="Khác">Khác</option>
     </select>
   </div>
-</div>
+  <div class="mb-4">
+    <label class="block text-sm font-medium mb-1">Triệu chứng (mỗi dòng 1 triệu chứng):</label>
+    <textarea id="symptoms" class="w-full border rounded px-3 py-2" rows="6" placeholder="Đau đầu&#10;Buồn nôn&#10;Khó ngủ"></textarea>
+  </div>
 
-<div class="mb-6">
-  <label class="font-medium">💬 Triệu chứng lâm sàng:</label>
-  <textarea id="patient-symptoms" rows="6" class="w-full border rounded px-3 py-2"
-    placeholder="Mỗi triệu chứng một dòng..."></textarea>
-</div>
-
-<div class="flex justify-between">
-  <button id="btn-back0" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại</button>
-  <button id="btn-next2" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Tiếp tục ➡</button>
+  <div class="mt-6 flex justify-between">
+    <button onclick="goToStep(0)" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại Bước 0</button>
+    <button onclick="saveStep1(); goToStep(2)" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Lưu & Tiếp tục ➡ Bước 2</button>
+  </div>
 </div>
