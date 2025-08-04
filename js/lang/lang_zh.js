@@ -1,4 +1,4 @@
-const lang_zh = {
+window.lang_zh = {
   // 通用标题
   app_title: "🧾 中医处方辅助应用",
 
