@@ -1,0 +1,50 @@
+<h2 class="text-2xl font-semibold mb-4">📊 Bước 6: Tái đánh giá & biểu đồ tiến triển</h2>
+
+<!-- 6.1 Tóm tắt nhanh -->
+<div class="grid md:grid-cols-3 gap-4 mb-6">
+  <div class="bg-white border rounded p-3">
+    <div class="text-sm text-gray-600">🧾 Số lần đánh giá VAS đã lưu</div>
+    <div id="b6-snapshot-count" class="font-semibold text-xl">0</div>
+  </div>
+  <div class="bg-white border rounded p-3">
+    <div class="text-sm text-gray-600">⏱️ Lần đầu → lần gần nhất</div>
+    <div id="b6-range" class="font-semibold text-sm">—</div>
+  </div>
+  <div class="bg-white border rounded p-3">
+    <div class="text-sm text-gray-600">✅ Số triệu chứng cải thiện (↓)</div>
+    <div id="b6-improved" class="font-semibold text-xl">0</div>
+  </div>
+</div>
+
+<!-- 6.2 Chọn triệu chứng để xem tiến triển theo thời gian -->
+<div class="bg-white border rounded p-4 mb-6">
+  <div class="flex items-center gap-3 mb-3">
+    <label for="b6-symptom-select" class="font-semibold">🔎 Chọn triệu chứng:</label>
+    <select id="b6-symptom-select" class="border rounded px-2 py-1 min-w-[260px]"></select>
+  </div>
+  <canvas id="b6-line" height="180"></canvas>
+  <p class="text-xs text-gray-500 mt-2">* Biểu đồ đường thể hiện VAS của triệu chứng đã chọn qua các lần đánh giá.</p>
+</div>
+
+<!-- 6.3 So sánh tổng quan (baseline vs gần nhất) -->
+<div class="bg-white border rounded p-4 mb-6">
+  <h3 class="font-semibold mb-2">🧮 So sánh VAS: Lần đầu vs Lần gần nhất</h3>
+  <canvas id="b6-bar" height="200"></canvas>
+  <p class="text-xs text-gray-500 mt-2">* Biểu đồ cột thể hiện thay đổi theo từng triệu chứng. Sắp xếp theo mức nặng ở lần gần nhất.</p>
+</div>
+
+<!-- 6.4 Ghi chú diễn giải của bác sĩ cho lần gần nhất -->
+<div class="bg-white border rounded p-4 mb-6">
+  <div class="font-semibold mb-2">🩺 Ghi chú diễn giải lần gần nhất</div>
+  <textarea id="b6-note" rows="5" class="w-full border rounded px-3 py-2" placeholder="Nhận xét tiến triển, lý do thay đổi, kế hoạch theo dõi..."></textarea>
+  <div class="mt-2 flex gap-2">
+    <button id="b6-btn-save-note" class="bg-green-600 text-white px-4 py-2 rounded">💾 Lưu ghi chú</button>
+    <span id="b6-note-status" class="text-sm text-gray-600"></span>
+  </div>
+</div>
+
+<!-- 6.5 Điều hướng -->
+<div class="mt-6 flex justify-between">
+  <button id="b6-btn-back5" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại Bước 5</button>
+  <button id="b6-btn-next7" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Tiếp tục ➡ Bước 7</button>
+</div>
