@@ -134,7 +134,36 @@ function addFinalHerb() {
 
 // --------- Ghi chú tự động ---------
 function autoFillStep5Note() {
-  document.getElementById("step5-note").value += "\nĐã kiểm tra và hiệu chỉnh theo đáp ứng lâm sàng.";
+  const herbs = getFinalHerbList();
+  if (!herbs.length || !window.herbalData) {
+    alert("⚠️ Không có vị thuốc hoặc dữ liệu.");
+    return;
+  }
+
+  const lines = [];
+
+  herbs.forEach(h => {
+    const item = window.herbalData.find(x => x.herb === h.name);
+    if (!item) return;
+
+    const toxicNote = item.toxic?.trim();
+    const generalNote = item.note?.trim();
+
+    let combinedNote = "";
+
+    if (toxicNote) combinedNote += `☠️ ${toxicNote}`;
+    if (generalNote) {
+      if (combinedNote) combinedNote += " | ";
+      combinedNote += `📝 ${generalNote}`;
+    }
+
+    if (combinedNote) {
+      lines.push(`• ${h.name}: ${combinedNote}`);
+    }
+  });
+
+  const noteBox = document.getElementById("step5-note");
+  noteBox.value = lines.join("\n") || "Không có ghi chú đặc biệt.";
 }
 
 // --------- Lưu dữ liệu bước 5 và xuất file JSON ---------
@@ -169,226 +198,483 @@ function downloadCurrentDataAsJSON() {
 function renderChartTemperature() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
-    alert("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
+    console.warn("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
     return;
   }
-  const tukhiLabels = ["Hàn", "Lương", "Bình", "Ôn", "Nhiệt"];
-  const tukhiMap = { "-2": "Hàn", "-1": "Lương", "0": "Bình", "1": "Ôn", "2": "Nhiệt" };
-  const tukhiData = { "Hàn": 0, "Lương": 0, "Bình": 0, "Ôn": 0, "Nhiệt": 0 };
-  const missing = [];
+
+  let sum = 0, count = 0;
+  const missingTukhi = [];
+
   herbs.forEach(h => {
     const item = window.herbalData.find(x => x.herb === h.name);
     if (!item) {
-      missing.push(h.name + " (không tìm thấy)");
+      missingTukhi.push(h.name + " (không tìm thấy)");
       return;
     }
-    const dose = parseFloat(h.dose);
-    if (isNaN(dose)) {
-      missing.push(h.name + " (thiếu liều)");
-      return;
+
+    const tukhi = parseFloat(item.tukhi);
+    const sd_dose = parseFloat(item.sd_dose);
+    const dose = h.dose;
+
+    if (!isNaN(tukhi) && !isNaN(sd_dose) && sd_dose > 0) {
+      const score = (dose / sd_dose) * tukhi;
+      sum += score;
+      count++;
+    } else {
+      missingTukhi.push(h.name + " (thiếu tứ khí hoặc SD)");
     }
-    const tukhi = tukhiMap[item.tukhi] || "Bình";
-    tukhiData[tukhi] += dose;
   });
-  const ctx = document.getElementById("chart-temperature").getContext("2d");
-  if (window.temperatureChart) window.temperatureChart.destroy();
-  window.temperatureChart = new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: tukhiLabels,
-      datasets: [{
-        label: "Tổng liều (g)",
-        data: tukhiLabels.map(l => tukhiData[l]),
-        backgroundColor: [
-          "#3399ff", "#66ccff", "#cccccc", "#ffcc66", "#ff6633"
-        ]
-      }]
-    },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-  if (missing.length) {
-    alert("Một số vị không phân tích được:\n" + missing.join("\n"));
+
+  if (missingTukhi.length > 0) {
+    alert("⚠️ Thiếu dữ liệu cho các vị thuốc:\n- " + missingTukhi.join("\n- "));
   }
+
+  const avgScore = count ? sum / count : 0;
+  renderGradientScale(avgScore); // Gọi vẽ thanh gradient
+}
+
+function renderGradientScale(avgScore) {
+  const canvas = document.getElementById("chart-temperature");
+  const ctx = canvas.getContext("2d");
+
+  const width = canvas.width;
+  const height = canvas.height;
+
+  // Xóa canvas cũ
+  ctx.clearRect(0, 0, width, height);
+
+  // Màu các vùng tứ khí
+  const colors = [
+    "#2c7bb6", // Đại Hàn
+    "#00a6ca", // Hàn
+    "#00ccbc", // Lương
+    "#ffffbf", // Bình
+    "#fdae61", // Ôn
+    "#f46d43", // Nhiệt
+    "#d73027"  // Đại Nhiệt
+  ];
+
+  const labels = ["Đại Hàn", "Hàn", "Lương", "Bình", "Ôn", "Nhiệt", "Đại Nhiệt"];
+  const numZones = labels.length;
+  const zoneWidth = width / numZones;
+
+  // Vẽ từng vùng màu
+  for (let i = 0; i < numZones; i++) {
+    ctx.fillStyle = colors[i];
+    ctx.fillRect(i * zoneWidth, 30, zoneWidth, 30);
+  }
+
+  // Vẽ nhãn vùng
+  ctx.fillStyle = "#000";
+  ctx.font = "12px sans-serif";
+  ctx.textAlign = "center";
+
+  labels.forEach((label, i) => {
+    const x = i * zoneWidth + zoneWidth / 2;
+    ctx.fillText(label, x, 75);
+  });
+
+  // Vẽ mũi tên chỉ vị trí avgScore [-5 đến +5]
+  const normalized = (avgScore + 5) / 10;  // chuyển sang khoảng [0,1]
+  const posX = normalized * width;
+
+  ctx.fillStyle = "black";
+  ctx.font = "20px sans-serif";
+  ctx.fillText("⬇", posX, 25);
 }
 
 // 2. NGŨ VỊ
 function renderChartFlavor() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
-    alert("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
+    console.warn("❌ Không có vị thuốc hoặc dữ liệu.");
     return;
   }
-  const flavorLabels = ["Tân", "Cam", "Toan", "Khổ", "Hàm", "Đạm"];
-  const flavorData = { "Tân": 0, "Cam": 0, "Toan": 0, "Khổ": 0, "Hàm": 0, "Đạm": 0 };
-  const missing = [];
+
+  const flavorLabels = ["Toan", "Tân", "Hàm", "Khổ", "Cam", "Phương hương"];
+  const flavorKeys = ["chua", "cay", "man", "dang", "ngot", "muithom"];
+  const flavorTotals = [0, 0, 0, 0, 0, 0];
+  const missingFlavorData = [];
+
   herbs.forEach(h => {
     const item = window.herbalData.find(x => x.herb === h.name);
     if (!item) {
-      missing.push(h.name + " (không tìm thấy)");
+      missingFlavorData.push(h.name + " (không tìm thấy)");
       return;
     }
+
     const dose = parseFloat(h.dose);
-    if (isNaN(dose)) {
-      missing.push(h.name + " (thiếu liều)");
+    const sd_dose = parseFloat(item.sd_dose);
+
+    if (isNaN(dose) || isNaN(sd_dose) || sd_dose === 0) {
+      missingFlavorData.push(h.name + " (thiếu liều hoặc SD)");
       return;
     }
-    (item.flavor || []).forEach(flv => {
-      if (flavorData[flv] !== undefined) flavorData[flv] += dose;
+
+    let valid = true;
+    const scores = flavorKeys.map(key => {
+      const value = parseFloat(item[key]);
+      if (isNaN(value)) {
+        valid = false;
+        return 0;
+      }
+      return (dose / sd_dose) * value;
     });
+
+    if (!valid) {
+      missingFlavorData.push(h.name + " (thiếu trị số ngũ vị)");
+    }
+
+    scores.forEach((s, i) => flavorTotals[i] += s);
   });
+
+  // 🔔 Cảnh báo nếu thiếu thông tin
+  if (missingFlavorData.length > 0) {
+    alert("⚠️ Các vị thuốc sau thiếu dữ liệu vị hoặc mùi:\n- " + missingFlavorData.join("\n- "));
+  }
+
+  // 🎯 Vẽ biểu đồ radar
   const ctx = document.getElementById("chart-flavor").getContext("2d");
-  if (window.flavorChart) window.flavorChart.destroy();
+
+  if (window.flavorChart) {
+    window.flavorChart.destroy();
+  }
+
   window.flavorChart = new Chart(ctx, {
-    type: "bar",
+    type: "radar",
     data: {
       labels: flavorLabels,
       datasets: [{
-        label: "Tổng liều (g)",
-        data: flavorLabels.map(l => flavorData[l]),
-        backgroundColor: "#60a5fa"
+        label: "Tổng hợp ngũ vị & mùi",
+        data: flavorTotals,
+        fill: true,
+        backgroundColor: "rgba(255, 99, 132, 0.2)",
+        borderColor: "rgba(255, 99, 132, 1)"
       }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          suggestedMax: Math.max(...flavorTotals) + 1
+        }
+      }
+    }
   });
-  if (missing.length) {
-    alert("Một số vị không phân tích được:\n" + missing.join("\n"));
-  }
 }
 
 // 3. QUY KINH
 function renderChartMeridian() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
-    alert("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
+    console.warn("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
     return;
   }
-  const meridianLabels = ["Phế", "Đại trường", "Vị", "Tỳ", "Tâm", "Tiểu trường", "Bàng quang", "Thận", "Tâm bào", "Tam tiêu", "Đởm", "Can"];
-  const meridianData = {};
-  meridianLabels.forEach(l => { meridianData[l] = 0; });
-  const missing = [];
+
+  const meridianLabels = ["Tâm", "Can", "Tỳ", "Phế", "Thận", "Tâm bào", "Đại trường", "Tiểu trường", "Vị", "Đởm", "Bàng quang", "Tam tiêu"];
+  const meridianKeys = ["tam", "can", "ty", "phe", "than", "tambao", "dai truong", "tieutruong", "vi", "dom", "bangquang", "tamtieu"];
+  const meridianTotals = Array(12).fill(0);
+  const missingMeridianData = [];
+
   herbs.forEach(h => {
     const item = window.herbalData.find(x => x.herb === h.name);
     if (!item) {
-      missing.push(h.name + " (không tìm thấy)");
+      missingMeridianData.push(h.name + " (không tìm thấy)");
       return;
     }
+
     const dose = parseFloat(h.dose);
-    if (isNaN(dose)) {
-      missing.push(h.name + " (thiếu liều)");
+    const sd_dose = parseFloat(item.sd_dose);
+
+    if (isNaN(dose) || isNaN(sd_dose) || sd_dose === 0) {
+      missingMeridianData.push(h.name + " (thiếu liều hoặc SD)");
       return;
     }
-    (item.meridian || []).forEach(m => {
-      if (meridianData[m] !== undefined) meridianData[m] += dose;
+
+    let valid = true;
+    const scores = meridianKeys.map(key => {
+      const value = parseFloat(item[key]);
+      if (isNaN(value)) {
+        valid = false;
+        return 0;
+      }
+      return (dose / sd_dose) * value;
     });
+
+    if (!valid) {
+      missingMeridianData.push(h.name + " (thiếu trị số quy kinh)");
+    }
+
+    scores.forEach((s, i) => meridianTotals[i] += s);
   });
+
+  if (missingMeridianData.length > 0) {
+    alert("⚠️ Các vị thuốc sau thiếu dữ liệu quy kinh:\n- " + missingMeridianData.join("\n- "));
+  }
+
   const ctx = document.getElementById("chart-meridian").getContext("2d");
-  if (window.meridianChart) window.meridianChart.destroy();
+
+  if (window.meridianChart) {
+    window.meridianChart.destroy();
+  }
+
   window.meridianChart = new Chart(ctx, {
-    type: "bar",
+    type: "radar",
     data: {
       labels: meridianLabels,
       datasets: [{
-        label: "Tổng liều (g)",
-        data: meridianLabels.map(l => meridianData[l]),
-        backgroundColor: "#34d399"
+        label: "Tổng hợp quy kinh",
+        data: meridianTotals,
+        backgroundColor: "rgba(255, 205, 86, 0.2)",
+        borderColor: "rgba(255, 205, 86, 1)"
       }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: {
+      responsive: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          suggestedMax: Math.max(...meridianTotals) + 1
+        }
+      }
+    }
   });
-  if (missing.length) {
-    alert("Một số vị không phân tích được:\n" + missing.join("\n"));
-  }
+}
+
+function safeParseNumber(value) {
+  if (value === null || value === undefined || value === "") return NaN;
+  return typeof value === "number" ? value : parseFloat(String(value).trim());
 }
 
 // 4. THĂNG – GIÁNG – PHÙ – TRẦM
 function renderChartDirection() {
   const herbs = getFinalHerbList();
   if (!herbs.length || !window.herbalData) {
-    alert("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
+    console.warn("❌ Không có vị thuốc hoặc dữ liệu herbalData chưa sẵn sàng.");
     return;
   }
+
   const V = { Thăng: 0, Giáng: 0, Phù: 0, Trầm: 0 };
   const missing = [];
+
   for (const h of herbs) {
     const item = window.herbalData.find(x => x.herb === h.name);
     if (!item) {
       missing.push(h.name + " (không tìm thấy)");
       continue;
     }
+
     const dose = parseFloat(h.dose);
     const sd = parseFloat(item.sd_dose);
     if (isNaN(dose) || isNaN(sd) || sd === 0) {
       missing.push(h.name + " (thiếu liều hoặc SD)");
       continue;
     }
+
     const thanggiang = parseFloat(item.thanggiang);
     const phutram = parseFloat(item.phutram);
     const weight = dose / sd;
+
     if (!isNaN(thanggiang)) {
-      if (thanggiang > 0) V.Thăng += thanggiang * weight;
-      else V.Giáng += -thanggiang * weight;
+      if (thanggiang > 0) V["Thăng"] += weight * thanggiang;
+      else V["Giáng"] += weight * Math.abs(thanggiang);
     }
+
     if (!isNaN(phutram)) {
-      if (phutram > 0) V.Phù += phutram * weight;
-      else V.Trầm += -phutram * weight;
+      if (phutram > 0) V["Phù"] += weight * phutram;
+      else V["Trầm"] += weight * Math.abs(phutram);
     }
   }
-  const ctx = document.getElementById("chart-direction").getContext("2d");
+
+  if (missing.length > 0) {
+    alert("⚠️ Thiếu dữ liệu:\n- " + missing.join("\n- "));
+  }
+
+  const vectorX = V.Thăng - V.Giáng;
+  const vectorY = V.Phù - V.Trầm;
+  const magnitude = Math.sqrt(vectorX ** 2 + vectorY ** 2);
+  const angleRad = Math.atan2(vectorY, vectorX);
+
+  const ctx = document.getElementById("chart-direction")?.getContext("2d");
+  if (!ctx) return;
   if (window.directionChart) window.directionChart.destroy();
+
+  const maxValue = Math.max(V.Thăng, V.Giáng, V.Phù, V.Trầm, 1);
+
+  const vectorPlugin = {
+    id: 'vectorPluginRadar',
+    afterDraw(chart) {
+      const { ctx, chartArea, scales } = chart;
+      const centerX = chartArea.left + chartArea.width / 2;
+      const centerY = chartArea.top + chartArea.height / 2;
+      const rScale = scales.r;
+
+      const radius = rScale.getPixelForValue(magnitude) - rScale.getPixelForValue(0);
+      const angle = angleRad - Math.PI / 2;
+
+      const endX = centerX + radius * Math.cos(angle);
+      const endY = centerY + radius * Math.sin(angle);
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(centerX, centerY);
+      ctx.lineTo(endX, endY);
+      ctx.strokeStyle = "orange";
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      // Mũi tên
+      const headlen = 10;
+      const dx = endX - centerX;
+      const dy = endY - centerY;
+      const angle2 = Math.atan2(dy, dx);
+
+      ctx.beginPath();
+      ctx.moveTo(endX, endY);
+      ctx.lineTo(endX - headlen * Math.cos(angle2 - Math.PI / 6), endY - headlen * Math.sin(angle2 - Math.PI / 6));
+      ctx.lineTo(endX - headlen * Math.cos(angle2 + Math.PI / 6), endY - headlen * Math.sin(angle2 + Math.PI / 6));
+      ctx.fillStyle = "orange";
+      ctx.fill();
+
+      ctx.restore();
+    }
+  };
+
   window.directionChart = new Chart(ctx, {
-    type: "bar",
+    type: "radar",
     data: {
-      labels: ["Thăng", "Giáng", "Phù", "Trầm"],
+      labels: ["Thăng", "Phù", "Giáng", "Trầm"],
       datasets: [{
         label: "Tổng lực",
-        data: [V.Thăng, V.Giáng, V.Phù, V.Trầm],
-        backgroundColor: ["#f59e42", "#4c51bf", "#3ab981", "#6b7280"]
+        data: [V.Thăng, V.Phù, V.Giáng, V.Trầm],
+        backgroundColor: "rgba(255, 165, 0, 0.2)",
+        borderColor: "orange",
+        pointBackgroundColor: "orange"
       }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 1 },
+      scales: {
+        r: {
+          beginAtZero: true,
+          max: Math.ceil(maxValue * 1.1),
+          ticks: {
+            stepSize: Math.ceil(maxValue / 3) || 1
+          },
+          pointLabels: {
+            font: { size: 14 }
+          }
+        }
+      },
+      plugins: {
+        title: {
+          display: true,
+          text: "Biểu đồ Radar: Thăng – Giáng – Phù – Trầm"
+        },
+        legend: {
+          display: false
+        }
+      }
+    },
+    plugins: [vectorPlugin]
   });
-  if (missing.length) {
-    alert("Một số vị không phân tích được:\n" + missing.join("\n"));
-  }
 }
 
 // 5. TÁC DỤNG YHCT
 function renderChartEffect() {
-  const herbs = getFinalHerbList();
-  if (!herbs.length || !window.herbsByEffect) {
-    alert("❌ Không có vị thuốc hoặc dữ liệu herbsByEffect chưa sẵn sàng.");
+  const herbsByEffect = window.herbsByEffect || {};
+  const masterHerbData = window.herbalData || [];
+  const formula = getFinalHerbList();
+
+  if (!Array.isArray(formula) || formula.length === 0) {
+    alert("⚠️ Không có toa thuốc để phân tích.");
     return;
   }
-  const effectLabels = Object.keys(window.herbsByEffect);
-  const effectData = {};
-  effectLabels.forEach(eff => { effectData[eff] = 0; });
-  const missing = [];
-  herbs.forEach(h => {
-    let found = false;
-    for (const eff of effectLabels) {
-      const list = window.herbsByEffect[eff].map(x => x.vietnamese);
-      if (list.includes(h.name)) {
-        effectData[eff] += parseFloat(h.dose) || 0;
-        found = true;
+
+  const effectScores = {};
+
+  for (const herbItem of formula) {
+    const herbName = herbItem.name?.trim();
+    const doseUsed = parseFloat(herbItem.dose || 0);
+
+    if (!herbName || doseUsed <= 0) {
+      console.warn(`⚠️ Bỏ qua vị thuốc không hợp lệ: ${herbName}`);
+      continue;
+    }
+
+    const standard = masterHerbData.find(h => h.herb?.trim() === herbName && h.sd_dose);
+    const sdDose = standard ? parseFloat(standard.sd_dose) : doseUsed;
+
+    let matched = false;
+
+    for (const [effect, herbs] of Object.entries(herbsByEffect)) {
+      for (const h of herbs) {
+        const hName = h.vietnamese?.trim();
+        const score = parseFloat(h.score || 0);
+
+        if (hName === herbName && score > 0 && sdDose > 0) {
+          matched = true;
+          const weighted = (score * doseUsed) / sdDose;
+          effectScores[effect] = (effectScores[effect] || 0) + weighted;
+        }
       }
     }
-    if (!found) missing.push(h.name + " (không rõ tác dụng)");
-  });
+
+    if (!matched) {
+      console.warn(`❌ Không tìm thấy tác dụng phù hợp cho: ${herbName}`);
+    }
+  }
+
+  const labels = Object.keys(effectScores);
+  const values = Object.values(effectScores).map(x => +x.toFixed(2));
+
+  if (labels.length === 0) {
+    alert("⚠️ Không có tác dụng YHCT nào được xác định.");
+    return;
+  }
+
   const ctx = document.getElementById("chart-effect").getContext("2d");
   if (window.effectChart) window.effectChart.destroy();
   window.effectChart = new Chart(ctx, {
     type: "bar",
     data: {
-      labels: effectLabels,
+      labels: labels,
       datasets: [{
-        label: "Tổng liều (g)",
-        data: effectLabels.map(l => effectData[l]),
-        backgroundColor: "#6366f1"
+        label: "Tổng điểm tác dụng",
+        data: values,
+        backgroundColor: "rgba(255, 159, 64, 0.6)",
+        borderColor: "rgba(255, 159, 64, 1)",
+        borderWidth: 1,
+        barThickness: labels.length > 15 ? 10 : labels.length > 10 ? 15 : 20
       }]
     },
-    options: { responsive: true, plugins: { legend: { display: false } } }
-  });
-  if (missing.length) {
-    alert("Một số vị không phân tích được:\n" + missing.join("\n"));
+    options: {
+  indexAxis: "y",
+  responsive: true,
+  maintainAspectRatio: false, // ⚠️ để canvas cao theo div cha
+  plugins: {
+    title: {
+      display: true,
+      text: "Phân tích tổng điểm Tác dụng YHCT của bài thuốc"
+    },
+    legend: { display: false }
+  },
+  scales: {
+    x: { beginAtZero: true },
+    y: {
+      ticks: {
+        autoSkip: false,
+        font: (ctx) => {
+          const total = labels.length;
+          const size = total > 15 ? 10 : total > 10 ? 12 : 14;
+          return { size };
+        }
+      }
+    }
   }
+}
+  });
 }
