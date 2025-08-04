@@ -1,67 +1,28 @@
-// /js/steps/step0.js
+<!-- BƯỚC 0: TẠO HỒ SƠ -->
+<label>📅 Ngày giờ khám:</label>
+<input type="datetime-local" id="visit-datetime" class="border p-1 rounded w-full mb-3">
+<h2 class="text-2xl font-semibold mb-4">📁 Bước 0: Quản lý hồ sơ bệnh nhân</h2>
 
-export function renderStep0() {
-  // Đọc partial và gắn vào main-content
-  fetch('./partials/step0.html')
-    .then(res => res.text())
-    .then(html => {
-      document.getElementById('main-content').innerHTML = html;
-
-      // Nếu muốn điền giá trị cũ vào ngày giờ khám (tùy logic cũ của bạn)
-      if (window.currentData && window.currentData.visitDatetime) {
-        document.getElementById('visit-datetime').value = window.currentData.visitDatetime;
-      }
-    });
-}
-
-// === Dưới đây là các hàm xử lý Bước 0 giữ nguyên logic cũ, KHÔNG sửa tên ===
-
-// Mở hồ sơ từ file JSON
-window.loadPatientFromFile = function() {
-  const fileInput = document.getElementById("json-file-input");
-  if (!fileInput.files || !fileInput.files[0]) {
-    alert("Vui lòng chọn file!");
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const data = JSON.parse(e.target.result);
-      window.currentData = data;
-      localStorage.setItem("currentData", JSON.stringify(data));
-      alert("Đã nạp hồ sơ thành công.");
-      // Nếu bạn có populateStep1Fields thì gọi, hoặc chuyển bước
-      if (typeof window.populateStep1Fields === "function") {
-        window.populateStep1Fields();
-      }
-    } catch (err) {
-      alert("Lỗi khi đọc file: " + err);
-    }
-  };
-  reader.readAsText(fileInput.files[0]);
-}
-
-// Tạo hồ sơ mới
-window.createNewPatient = function() {
-  const name = document.getElementById("new-patient-name").value.trim();
-  const visitDatetime = document.getElementById("visit-datetime").value;
-  if (!name) {
-    alert("Nhập tên bệnh nhân!");
-    return;
-  }
-  window.currentData = {
-    patientName: name,
-    visitDatetime: visitDatetime,
-    steps: {}
-  };
-  localStorage.setItem("currentData", JSON.stringify(window.currentData));
-  alert("Đã tạo hồ sơ mới cho " + name);
-}
-
-// Chuyển sang bước 1 và điền thông tin (giữ logic gốc)
-window.populateStep1Fields = function() {
-  // Nếu bạn có hàm điền dữ liệu cho bước 1 thì giữ nguyên như file cũ,
-  // hoặc chỉ cần chuyển bước thôi nếu chưa có
-  // Ví dụ:
-  // window.goToStep(1);
-}
+<!-- Mở hồ sơ từ file JSON -->
+<div class="mb-6">
+  <label class="block text-sm font-medium mb-1">📂 Chọn hồ sơ từ file JSON:</label>
+  <input type="file" id="json-file-input" accept=".json" class="block w-full text-sm text-gray-600">
+  <button id="btn-open-patient-file" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+    📥 Mở hồ sơ
+  </button>
+</div>
+<hr class="my-6">
+<!-- Tạo hồ sơ mới -->
+<div class="mb-6">
+  <label class="block text-sm font-medium mb-1">🆕 Tạo hồ sơ mới:</label>
+  <input id="new-patient-name" type="text" placeholder="Nhập tên bệnh nhân..." class="w-full border rounded px-3 py-2">
+  <button id="btn-create-new-patient" class="mt-2 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+    ➕ Tạo hồ sơ
+  </button>
+</div>
+<!-- Tiếp tục -->
+<div class="mt-6">
+  <button id="btn-step0-continue" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+    ➡ Tiếp tục bước 1
+  </button>
+</div>
