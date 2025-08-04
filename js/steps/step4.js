@@ -109,6 +109,24 @@ export function renderStep4(root) {
   document.getElementById("btn-final-gpt-formula").onclick = renderFinalGPTFormula;
   setupHerbBarChartUI();
 }
+
+function populateStep4() {
+  const data = JSON.parse(localStorage.getItem("currentData") || "{}");
+  // Hội chứng
+  const syndrome = data.steps?.step3?.final || "(chưa xác định)";
+  document.getElementById("confirmed-syndrome").textContent = syndrome;
+  // Triệu chứng nổi bật
+  const symptoms = data.steps?.step2?.symptoms || [];
+  const sorted = [...symptoms].sort((a, b) => b.vas - a.vas);
+  const topSymptoms = sorted.slice(0, 5);
+  const ul = document.getElementById("step4-top-symptom-list");
+  ul.innerHTML = "";
+  topSymptoms.forEach(s => {
+    const li = document.createElement("li");
+    li.textContent = `${s.symptom} (VAS ${s.vas})`;
+    ul.appendChild(li);
+  });
+  
   // 6S và các trường khác
   const step4 = data.steps?.step4 || {};
   const sixs = step4.sixs || {};
