@@ -1,52 +1,47 @@
-<h2 class="text-2xl font-semibold mb-4">🧠 Bước 3: Biện chứng phân thể</h2>
+<!-- /partials/step3.html -->
+<div id="step-3" class="step-section">
+  <h2 class="text-2xl font-semibold mb-4">🧠 Bước 3: Biện chứng phân thể</h2>
 
-<!-- 3.1 Triệu chứng đầu vào (đọc từ Bước 1) -->
-<div class="mb-6">
-  <label class="block font-medium mb-1">💬 Triệu chứng (từ Bước 1):</label>
-  <textarea id="b3-symptoms" rows="5" class="w-full border rounded px-3 py-2 bg-gray-50" readonly></textarea>
-  <p class="text-xs text-gray-500 mt-1">* Nếu cần chỉnh, quay lại Bước 1.</p>
-</div>
+  <!-- Triệu chứng đầu vào -->
+  <div class="mb-4">
+    <label class="block text-sm font-medium mb-1">Triệu chứng (từ Bước 1):</label>
+    <textarea id="step3-symptoms" rows="4" class="w-full border rounded px-3 py-2 bg-gray-50" readonly></textarea>
+  </div>
 
-<!-- 3.2 Gợi ý hội chứng -->
-<div class="mb-6">
-  <div class="flex items-center justify-between mb-2">
-    <h3 class="font-semibold">📚 Gợi ý hội chứng kinh điển</h3>
-    <div class="space-x-2">
-      <button id="b3-btn-suggest" class="bg-emerald-600 text-white px-3 py-2 rounded">🤖 GPT gợi ý</button>
-      <button id="b3-btn-clear-suggest" class="bg-gray-600 text-white px-3 py-2 rounded">🧹 Xoá danh sách</button>
+  <!-- Gợi ý hội chứng -->
+  <div class="mb-4">
+    <div class="flex items-center gap-2 mb-1">
+      <button onclick="suggestSyndromeGPT()" class="bg-emerald-600 text-white px-3 py-2 rounded">🤖 GPT gợi ý hội chứng</button>
+      <button onclick="clearSyndromeSuggests()" class="bg-gray-600 text-white px-3 py-2 rounded">🧹 Xoá danh sách</button>
+    </div>
+    <div id="syndrome-suggest-list" class="space-y-2"></div>
+    <p class="text-xs text-gray-500 mt-1">* Chọn hội chứng từ danh sách hoặc tự nhập.</p>
+  </div>
+
+  <!-- Hội chứng chọn và sinh câu hỏi -->
+  <div class="mb-4">
+    <label class="block text-sm font-medium mb-1">🏷️ Hội chứng đang xét:</label>
+    <input id="selected-syndrome" type="text" class="w-full border rounded px-3 py-2" placeholder="Nhập/tìm hội chứng...">
+    <div class="flex gap-2 mt-3">
+      <button onclick="generateExtraQuestions()" class="bg-indigo-600 text-white px-3 py-2 rounded">❓ Sinh câu hỏi bổ sung</button>
+      <button onclick="clearExtraQuestions()" class="bg-gray-600 text-white px-3 py-2 rounded">🧹 Xoá câu hỏi</button>
     </div>
   </div>
 
-  <div id="b3-suggest-list" class="grid gap-2"></div>
-  <p class="text-xs text-gray-500 mt-2">
-    * Chọn một hội chứng bên dưới để đặt làm “hội chứng đang xét”.
-  </p>
-</div>
+  <!-- Hiển thị câu hỏi bổ sung -->
+  <div id="extra-questions" class="space-y-3 mb-8"></div>
 
-<!-- 3.3 Hội chứng đang xét & câu hỏi bổ sung -->
-<div class="mb-6">
-  <label class="block font-medium mb-1">🏷️ Hội chứng đang xét:</label>
-  <input id="b3-selected-syndrome" type="text" class="w-full border rounded px-3 py-2" placeholder="Ví dụ: Can khí uất kết, Tỳ hư thấp trệ...">
-
-  <div class="flex items-center gap-2 mt-3">
-    <button id="b3-btn-gen-questions" class="bg-indigo-600 text-white px-3 py-2 rounded">❓ Sinh câu hỏi bổ sung</button>
-    <button id="b3-btn-clear-questions" class="bg-gray-600 text-white px-3 py-2 rounded">🧹 Xoá câu hỏi</button>
+  <!-- Preview cây chẩn đoán đơn giản -->
+  <div class="mb-8 bg-white border rounded p-4">
+    <h3 class="font-semibold mb-2">🌿 Cây chẩn đoán (xem nhanh)</h3>
+    <pre id="simple-tree" class="text-sm bg-gray-50 p-3 rounded overflow-auto"></pre>
   </div>
-</div>
 
-<div id="b3-questions" class="space-y-3 mb-8"></div>
-
-<!-- 3.4 Cây chẩn đoán (preview rất đơn giản) -->
-<div class="mb-8 bg-white border rounded p-4">
-  <h3 class="font-semibold mb-2">🌿 Cây chẩn đoán (mô tả ngắn)</h3>
-  <pre id="b3-tree" class="text-sm bg-gray-50 p-3 rounded overflow-auto"></pre>
-</div>
-
-<!-- 3.5 Điều hướng -->
-<div class="mt-6 flex justify-between">
-  <button id="b3-btn-back2" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại Bước 2</button>
-  <div class="space-x-2">
-    <button id="b3-btn-save" class="bg-green-600 text-white px-4 py-2 rounded">💾 Lưu</button>
-    <button id="b3-btn-next4" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Tiếp tục ➡ Bước 4</button>
+  <div class="mt-6 flex justify-between">
+    <button onclick="goToStep(2)" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại Bước 2</button>
+    <div class="space-x-2">
+      <button onclick="saveStep3()" class="bg-green-600 text-white px-4 py-2 rounded">💾 Lưu</button>
+      <button onclick="goToStep(4)" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Tiếp tục ➡ Bước 4</button>
+    </div>
   </div>
 </div>
