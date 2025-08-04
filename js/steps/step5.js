@@ -19,7 +19,7 @@ export function renderStep5(root) {
           <input type="text" id="final-new-herb" placeholder="${window.lang.step5.add_herb_placeholder}" class="flex-1 border rounded px-3 py-2">
           <input type="text" id="final-new-dose" placeholder="${window.lang.step5.add_dose_placeholder}" class="w-24 border rounded px-3 py-2">
           <button id="btn-add-final-herb" class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            ➕ ${window.lang.step5.add_btn}
+            ${window.lang.step5.add_btn}
           </button>
         </div>
       </div>
