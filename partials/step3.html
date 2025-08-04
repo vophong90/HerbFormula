@@ -1,47 +1,38 @@
-<!-- /partials/step3.html -->
-<div id="step-3" class="step-section">
-  <h2 class="text-2xl font-semibold mb-4">🧠 Bước 3: Biện chứng phân thể</h2>
+<h2 class="text-2xl font-semibold mb-4">🧠 Bước 3: Biện chứng Y học cổ truyền</h2>
 
-  <!-- Triệu chứng đầu vào -->
-  <div class="mb-4">
-    <label class="block text-sm font-medium mb-1">Triệu chứng (từ Bước 1):</label>
-    <textarea id="step3-symptoms" rows="4" class="w-full border rounded px-3 py-2 bg-gray-50" readonly></textarea>
+<!-- 🕘 Lịch sử hội chứng đã chẩn đoán -->
+<div class="mb-6">
+  <h3 class="text-lg font-semibold mb-2">📜 Hội chứng YHCT các lần khám trước:</h3>
+  <ul id="past-syndrome-list" class="list-disc list-inside text-gray-700 text-sm"></ul>
+</div>
+
+<!-- 🧪 Phân tích hội chứng hiện tại -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+  <div>
+    <label class="font-semibold block mb-1">🔍 Tiếp cận theo sơ đồ:</label>
+    <button id="btn-auto-tree" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+      🧠 Phân tích sơ đồ
+    </button>
+    <textarea id="syndrome-model" rows="3" class="w-full border rounded px-3 py-2" placeholder="VD: Tỳ hư thấp thịnh, Can khí uất kết..."></textarea>
+    <div id="tree-extra-questions" class="mt-4 space-y-3"></div>
   </div>
 
-  <!-- Gợi ý hội chứng -->
-  <div class="mb-4">
-    <div class="flex items-center gap-2 mb-1">
-      <button onclick="suggestSyndromeGPT()" class="bg-emerald-600 text-white px-3 py-2 rounded">🤖 GPT gợi ý hội chứng</button>
-      <button onclick="clearSyndromeSuggests()" class="bg-gray-600 text-white px-3 py-2 rounded">🧹 Xoá danh sách</button>
-    </div>
-    <div id="syndrome-suggest-list" class="space-y-2"></div>
-    <p class="text-xs text-gray-500 mt-1">* Chọn hội chứng từ danh sách hoặc tự nhập.</p>
+  <div>
+    <label class="font-semibold block mb-1">📚 GPT gợi ý theo triệu chứng:</label>
+    <button id="btn-auto-classic" class="bg-green-600 text-white px-4 py-2 rounded mt-2">
+      ⚙️ Phân tích triệu chứng
+    </button>
+    <textarea id="syndrome-classic" rows="3" class="w-full border rounded px-3 py-2" placeholder="Trích dẫn từ sách hoặc kinh nghiệm..."></textarea>
   </div>
 
-  <!-- Hội chứng chọn và sinh câu hỏi -->
-  <div class="mb-4">
-    <label class="block text-sm font-medium mb-1">🏷️ Hội chứng đang xét:</label>
-    <input id="selected-syndrome" type="text" class="w-full border rounded px-3 py-2" placeholder="Nhập/tìm hội chứng...">
-    <div class="flex gap-2 mt-3">
-      <button onclick="generateExtraQuestions()" class="bg-indigo-600 text-white px-3 py-2 rounded">❓ Sinh câu hỏi bổ sung</button>
-      <button onclick="clearExtraQuestions()" class="bg-gray-600 text-white px-3 py-2 rounded">🧹 Xoá câu hỏi</button>
-    </div>
+  <div class="md:col-span-2">
+    <label class="font-semibold block mb-1">👩‍⚕️ Hội chứng theo bác sĩ quyết định:</label>
+    <input id="syndrome-final" type="text" class="w-full border rounded px-3 py-2" placeholder="VD: Tỳ khí hư, Thận dương hư...">
   </div>
+</div>
 
-  <!-- Hiển thị câu hỏi bổ sung -->
-  <div id="extra-questions" class="space-y-3 mb-8"></div>
-
-  <!-- Preview cây chẩn đoán đơn giản -->
-  <div class="mb-8 bg-white border rounded p-4">
-    <h3 class="font-semibold mb-2">🌿 Cây chẩn đoán (xem nhanh)</h3>
-    <pre id="simple-tree" class="text-sm bg-gray-50 p-3 rounded overflow-auto"></pre>
-  </div>
-
-  <div class="mt-6 flex justify-between">
-    <button onclick="goToStep(2)" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại Bước 2</button>
-    <div class="space-x-2">
-      <button onclick="saveStep3()" class="bg-green-600 text-white px-4 py-2 rounded">💾 Lưu</button>
-      <button onclick="goToStep(4)" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Tiếp tục ➡ Bước 4</button>
-    </div>
-  </div>
+<!-- Điều hướng -->
+<div class="flex justify-between">
+  <button id="btn-back-step2" class="bg-gray-500 text-white px-4 py-2 rounded">⬅ Quay lại</button>
+  <button id="btn-save-next-step3" class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">Tiếp tục ➡</button>
 </div>
