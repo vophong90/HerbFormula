@@ -180,6 +180,7 @@ Yêu cầu:
 - Chỉ chọn trong các pháp trị chuẩn của Trung y, không được sáng tạo.
 - Ưu tiên trình bày bằng thuật ngữ Hán Việt.
 - Không viết thừa, không lan man.
+- Nếu người dùng nhập tiếng Trung thì trả kết quả là tiếng Trung chuyên ngành Trung y
 
 Trình bày kết quả như sau:
 
