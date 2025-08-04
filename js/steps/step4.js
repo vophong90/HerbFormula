@@ -182,7 +182,7 @@ Yêu cầu:
 - Không viết thừa, không lan man.
 - Nếu người dùng nhập tiếng Trung thì trả kết quả là tiếng Trung chuyên ngành Trung y
 
-Trình bày kết quả như sau:
+Trình bày kết quả như sau, bắt buộc trả về là tiếng Trung nếu promt gửi lên có bất kỳ từ tiếng Trung nào:
 
 🔸 **Trị bản:**  
 – Pháp trị: ...  
