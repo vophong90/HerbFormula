@@ -1,7 +1,3 @@
-
-js
-Copy
-Edit
 export function renderStep5(root) {
   root.innerHTML = `
     <h2 class="text-2xl font-semibold mb-4">${window.lang.step5.title}</h2>
