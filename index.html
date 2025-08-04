@@ -19,43 +19,81 @@
   <script src="./js/data/strengherb.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-800 min-h-screen flex flex-col">
-  <div class="flex-grow">
-  <div class="max-w-5xl mx-auto px-4 py-6 w-full">
-    <h1 class="text-3xl font-bold text-center mb-6">🧾 Ứng dụng hỗ trợ lập phương Y học cổ truyền</h1>
 
-    <!-- Tabs điều hướng -->
-    <div class="w-full flex justify-center px-4 py-4">
-      <nav class="flex bg-white rounded-2xl shadow-inner border border-gray-200 overflow-x-auto">
-    <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
-      data-path="#/step0"><span class="mr-1">📂</span>B0: Hồ sơ</button>
-    <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
-      data-path="#/step1"><span class="mr-1">🩺</span>B1: Lâm sàng</button>
-    <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
-      data-path="#/step2"><span class="mr-1">📊</span>B2: Đánh giá</button>
-    <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
-      data-path="#/step3"><span class="mr-1">📖</span>B3: Biện chứng</button>
-    <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
-      data-path="#/step4"><span class="mr-1">💡</span>B4: Gợi ý toa</button>
-    <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
-      data-path="#/step5"><span class="mr-1">🛠️</span>B5: Hiệu chỉnh</button>
-      </nav>
+  <!-- Chọn ngôn ngữ -->
+  <div class="fixed top-4 right-6 z-50">
+    <select id="lang-select" class="border rounded px-2 py-1 shadow bg-white">
+      <option value="vi">🇻🇳 Tiếng Việt</option>
+      <option value="zh">🇨🇳 中文</option>
+    </select>
+  </div>
+
+  <div class="flex-grow">
+    <div class="max-w-5xl mx-auto px-4 py-6 w-full">
+      <h1 id="main-app-title" class="text-3xl font-bold text-center mb-6">
+        🧾 Ứng dụng hỗ trợ lập phương Y học cổ truyền
+      </h1>
+
+      <!-- Tabs điều hướng -->
+      <div class="w-full flex justify-center px-4 py-4">
+        <nav class="flex bg-white rounded-2xl shadow-inner border border-gray-200 overflow-x-auto" id="main-step-tabs">
+          <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
+            data-path="#/step0"><span class="mr-1">📂</span>B0: Hồ sơ</button>
+          <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
+            data-path="#/step1"><span class="mr-1">🩺</span>B1: Lâm sàng</button>
+          <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
+            data-path="#/step2"><span class="mr-1">📊</span>B2: Đánh giá</button>
+          <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
+            data-path="#/step3"><span class="mr-1">📖</span>B3: Biện chứng</button>
+          <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
+            data-path="#/step4"><span class="mr-1">💡</span>B4: Gợi ý toa</button>
+          <button class="step-tab px-5 py-2 font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-100 transition-all duration-200 focus:outline-none rounded-2xl"
+            data-path="#/step5"><span class="mr-1">🛠️</span>B5: Hiệu chỉnh</button>
+        </nav>
+      </div>
+      
+      <!-- nơi render nội dung từng bước -->
+      <div id="app"></div>
     </div>
-    
-    <!-- nơi render nội dung từng bước -->
-    <div id="app"></div>
   </div>
 
   <!-- khởi động app -->
   <script type="module" src="./js/main.js"></script>
-<footer class="mt-16 border-t bg-gray-100 text-center text-sm text-gray-600 py-6 shadow-inner">
+  
+  <footer class="mt-16 border-t bg-gray-100 text-center text-sm text-gray-600 py-6 shadow-inner">
     👨‍💻 Thiết kế bởi <strong>Võ Thanh Phong</strong> với sự hỗ trợ của <strong>ChatGPT</strong>.<br>
     © <span id="currentYear"></span> Bản quyền thuộc về <strong>Võ Thanh Phong</strong>.
-</footer>
-<script>
-  document.getElementById("currentYear").textContent = new Date().getFullYear();
-</script>
+  </footer>
+  <script>
+    document.getElementById("currentYear").textContent = new Date().getFullYear();
+  </script>
+
+  <!-- Đổi ngôn ngữ cho tiêu đề app và tab navigation khi chuyển lang -->
+  <script>
+    // Chỉ chạy đoạn này nếu bạn muốn đổi text cho tiêu đề app và tab ngay cả khi chưa vào JS động
+    function updateAppNavLang() {
+      // Đổi tiêu đề app
+      if (window.lang && window.lang.app_title)
+        document.getElementById('main-app-title').textContent = window.lang.app_title;
+      // Đổi các tab
+      const stepTabs = document.querySelectorAll('.step-tab');
+      if (window.lang && window.lang.step_tab && stepTabs.length === window.lang.step_tab.length) {
+        stepTabs.forEach((btn, i) => {
+          // Giữ icon
+          const icon = btn.querySelector('span')?.outerHTML || '';
+          btn.innerHTML = icon + window.lang.step_tab[i];
+        });
+      }
+    }
+    // Đăng ký sự kiện khi đổi ngôn ngữ
+    document.getElementById('lang-select').addEventListener('change', function() {
+      window.lang = (this.value === 'zh') ? window.lang_zh : window.lang_vi;
+      updateAppNavLang();
+      // Nếu đã khởi động app bằng JS module, các bước sẽ tự render lại, không cần làm thêm ở đây.
+    });
+    // Khởi tạo lần đầu
+    window.lang = window.lang_vi;
+    updateAppNavLang();
+  </script>
 </body>
 </html>
-
-
-
