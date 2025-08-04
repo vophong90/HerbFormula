@@ -180,9 +180,9 @@ Yêu cầu:
 - Chỉ chọn trong các pháp trị chuẩn của Trung y, không được sáng tạo.
 - Ưu tiên trình bày bằng thuật ngữ Hán Việt.
 - Không viết thừa, không lan man.
-- Nếu người dùng nhập tiếng Trung thì trả kết quả là tiếng Trung chuyên ngành Trung y
+- Nếu promt gửi lên có bất kỳ tiếng Trung nào, thì trả kết quả bắt buộc phài là 100% tiếng Trung chuyên ngành Trung y
 
-Trình bày kết quả như sau, bắt buộc trả về là tiếng Trung nếu promt gửi lên có bất kỳ từ tiếng Trung nào:
+Trình bày kết quả như sau:
 
 🔸 **Trị bản:**  
 – Pháp trị: ...  
