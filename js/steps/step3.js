@@ -314,6 +314,32 @@ ${extraText}`;
   }
 }
 
+// Helper: bóc text từ Responses API (và fallback Chat Completions nếu server thay đổi)
+function extractOutputText(resp) {
+  // 1) Responses API: thuộc tính thuận tiện
+  if (typeof resp?.output_text === "string" && resp.output_text.trim()) {
+    return resp.output_text;
+  }
+  // 2) Responses API: duyệt mảng output -> message -> content[]
+  if (Array.isArray(resp?.output)) {
+    const parts = [];
+    for (const item of resp.output) {
+      if (item?.type === "message" && Array.isArray(item.content)) {
+        for (const c of item.content) {
+          if (typeof c?.text === "string") parts.push(c.text);
+        }
+      }
+    }
+    if (parts.length) return parts.join("\n");
+  }
+  // 3) Fallback tương thích ngược (nếu server trả kiểu Chat Completions)
+  return (
+    resp?.choices?.[0]?.message?.content ||
+    resp?.choices?.[0]?.text ||
+    ""
+  );
+}
+
 // Render các câu hỏi followup
 function renderExtraQuestions(questions) {
   const container = document.getElementById("tree-extra-questions");
