@@ -149,18 +149,26 @@ function populateStep4() {
 
 async function autoSuggestMethod() {
   const data = JSON.parse(localStorage.getItem("currentData") || "{}");
-  const syndrome = data.steps?.step3?.final?.trim();
-  const symptoms = data.steps?.step2?.symptoms || [];
+  const syndrome = data?.steps?.step3?.final?.trim();
+  const symptoms = data?.steps?.step2?.symptoms || [];
   const outputBox = document.getElementById("treatmethod-gpt");
-  if (!syndrome || symptoms.length === 0) {
+
+  if (!outputBox) {
+    alert("❌ Không tìm thấy ô hiển thị kết quả (treatmethod-gpt).");
+    return;
+  }
+  if (!syndrome || !Array.isArray(symptoms) || symptoms.length === 0) {
     outputBox.value = "⚠️ Thiếu dữ liệu hội chứng hoặc triệu chứng.";
     return;
   }
+
   outputBox.value = "⏳ Đang gợi ý pháp trị, vui lòng chờ...";
-  const symptomList = symptoms
-    .sort((a, b) => b.vas - a.vas)
+
+  const symptomList = [...symptoms]
+    .sort((a, b) => Number(b.vas) - Number(a.vas))
     .map((s, i) => `${i + 1}. ${s.symptom} (VAS: ${s.vas})`)
     .join("\n");
+
   const prompt = `
 Bạn là chuyên gia Y học cổ truyền.
 
@@ -180,7 +188,7 @@ Yêu cầu:
 - Chỉ chọn trong các pháp trị chuẩn của Trung y, không được sáng tạo.
 - Ưu tiên trình bày bằng thuật ngữ Hán Việt.
 - Không viết thừa, không lan man.
-- Nếu promt gửi lên có bất kỳ tiếng Trung nào, thì trả kết quả bắt buộc phài là 100% tiếng Trung chuyên ngành Trung y
+- Nếu prompt gửi lên có bất kỳ tiếng Trung nào, thì trả kết quả bắt buộc phải là 100% tiếng Trung chuyên ngành Trung y.
 
 Trình bày kết quả như sau:
 
@@ -191,15 +199,43 @@ Trình bày kết quả như sau:
 🔸 **Trị tiêu:**  
 – Pháp trị: ...  
 – Lý do chọn pháp trị: ...
-`;
-  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-  const result = await res.json();
-  const reply = result.choices?.[0]?.message?.content || "❌ GPT không trả về kết quả.";
-  outputBox.value = reply;
+`.trim();
+
+  try {
+    const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "chat",   // quan trọng: đúng router PHP (gọi /v1/responses)
+        prompt
+        // model: "gpt-5" // tuỳ chọn: override model nếu muốn
+      })
+    });
+
+    if (!res.ok) {
+      const msg = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} – ${msg || res.statusText}`);
+    }
+
+    const json = await res.json();
+
+    // Lấy text theo Responses API (không dùng helper)
+    let reply = (json.output_text && json.output_text.trim()) || "";
+    if (!reply && Array.isArray(json.output)) {
+      reply = json.output
+        .filter(it => it?.type === "message")
+        .flatMap(it => Array.isArray(it.content) ? it.content : [])
+        .map(c => c?.text)
+        .filter(Boolean)
+        .join("\n")
+        .trim();
+    }
+
+    outputBox.value = reply || "❌ GPT không trả về kết quả.";
+  } catch (err) {
+    console.error("❌ Lỗi khi gọi GPT API:", err);
+    outputBox.value = "❌ Lỗi khi gọi GPT API.";
+  }
 }
 
 function searchDoiDuocByKeyword() {
