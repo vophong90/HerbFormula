@@ -75,7 +75,7 @@ async function extractSymptoms() {
   const raw = data?.steps?.step1?.symptoms || "";
 
   if (!raw.trim()) {
-    alert(window.lang.step2.alert_no_symptom || "⚠️ Không có dữ liệu triệu chứng để phân tích.");
+    alert(window.lang?.step2?.alert_no_symptom || "⚠️ Không có dữ liệu triệu chứng để phân tích.");
     return;
   }
 
@@ -87,28 +87,77 @@ Bạn là bác sĩ Y học cổ truyền. Dưới đây là đoạn mô tả tri
 Hãy tách ra danh sách các triệu chứng cụ thể, mỗi dòng ghi 1 triệu chứng ngắn gọn và dễ hiểu (không lặp từ). Lưu ý chỉ lấy triệu chứng, không lấy các đặc điểm của triệu chứng đó. Không cần phân tích, chỉ liệt kê như sau:
 1. [triệu chứng 1]
 2. [triệu chứng 2]
-...`;
+...`.trim();
 
-  const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt })
-  });
-  const result = await res.json();
-  const reply = result.choices?.[0]?.message?.content || "";
+  let reply = "";
+  try {
+    const res = await fetch("https://gpt-api-19xu.onrender.com/gpt.php", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "chat",          // <<< QUAN TRỌNG: trỏ đúng route 'chat' trong PHP
+        prompt                   //  bạn cũng có thể gửi {model:"gpt-5"} nếu muốn override
+      })
+    });
+
+    // HTTP error guard
+    if (!res.ok) {
+      const text = await res.text().catch(() => "");
+      throw new Error(`HTTP ${res.status} – ${text || res.statusText}`);
+    }
+
+    const json = await res.json();
+
+    // === Lấy text theo Responses API ===
+    reply = extractOutputText(json).trim();
+
+  } catch (e) {
+    console.error("extractSymptoms error:", e);
+    alert(window.lang?.step2?.alert_gpt_fail || "❌ GPT không trích xuất được triệu chứng.");
+    return;
+  }
+
+  // Tách các dòng, loại "1. ", "- ", bullet...
   const lines = reply
-    .split("\n")
-    .map(line => line.replace(/^\d+\.\s*/, "").trim())
-    .filter(line => line.length > 0);
+    .split(/\r?\n/)
+    .map(line => line.replace(/^\s*[-*•]?\s*/, "").replace(/^\d+\.\s*/, "").trim())
+    .filter(Boolean);
 
   if (!lines.length) {
-    alert(window.lang.step2.alert_gpt_fail || "❌ GPT không trích xuất được triệu chứng.");
+    alert(window.lang?.step2?.alert_gpt_fail || "❌ GPT không trích xuất được triệu chứng.");
     return;
   }
 
   const container = document.getElementById("symptom-vas-list");
+  if (!container) {
+    console.warn("#symptom-vas-list không tồn tại.");
+    return;
+  }
   container.innerHTML = "";
   lines.forEach(symptom => container.appendChild(createSymptomVASBlock(symptom)));
+}
+
+// Helper: bóc text từ Responses API (và tương thích ngược)
+function extractOutputText(resp) {
+  // 1) Responses API: thuộc tính thuận tiện
+  if (typeof resp?.output_text === "string" && resp.output_text.trim()) {
+    return resp.output_text;
+  }
+  // 2) Responses API: duyệt mảng output -> message -> content[]
+  if (Array.isArray(resp?.output)) {
+    const parts = [];
+    for (const item of resp.output) {
+      if (item?.type === "message" && Array.isArray(item.content)) {
+        for (const c of item.content) {
+          if (typeof c?.text === "string") parts.push(c.text);
+        }
+      }
+    }
+    if (parts.length) return parts.join("\n");
+  }
+  // 3) Tương thích ngược: Chat Completions
+  const legacy = resp?.choices?.[0]?.message?.content || resp?.choices?.[0]?.text;
+  return legacy || "";
 }
 
 // Tạo 1 dòng triệu chứng với thanh trượt VAS và input số
