@@ -145,7 +145,8 @@ ${rawText}
     }
 
     const gptJson = await res.json();
-    const gptText = extractOutputText(gptJson).trim();
+    const getText = (window.extractOutputText || fallbackExtractOutputText);
+    const gptText = getText(gptJson).trim();
 
     if (!gptText) {
       outputBox.value = "⚠️ GPT không xác định được hội chứng phù hợp.";
@@ -260,7 +261,8 @@ ${extraText}`;
     }
 
     const result = await res.json();
-    const reply = extractOutputText(result).trim() || "Không nhận được phản hồi từ GPT.";
+    const getText = (window.extractOutputText || fallbackExtractOutputText);
+    const reply = getText(result).trim() || "Không nhận được phản hồi từ GPT.";
 
     // Tách các câu hỏi gợi ý follow-up (nếu có)
     const followupQuestions = reply
@@ -286,6 +288,20 @@ ${extraText}`;
     console.error("❌ Lỗi khi gọi GPT API:", err);
     if (outputBoxModel) outputBoxModel.value = "❌ Lỗi khi gọi GPT API.";
   }
+}
+
+function fallbackExtractOutputText(resp) {
+  if (typeof resp?.output_text === "string" && resp.output_text.trim()) return resp.output_text;
+  if (Array.isArray(resp?.output)) {
+    const parts = [];
+    for (const item of resp.output) {
+      if (item?.type === "message" && Array.isArray(item.content)) {
+        for (const c of item.content) if (typeof c?.text === "string") parts.push(c.text);
+      }
+    }
+    if (parts.length) return parts.join("\n");
+  }
+  return resp?.choices?.[0]?.message?.content || resp?.choices?.[0]?.text || "";
 }
 
 // Render các câu hỏi followup
