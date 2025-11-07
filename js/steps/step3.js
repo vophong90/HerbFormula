@@ -259,28 +259,24 @@ ${extraText}`;
       const msg = await res.text().catch(() => "");
       throw new Error(`HTTP ${res.status} – ${msg || res.statusText}`);
     }
-
     const result = await res.json();
     const getText = (window.extractOutputText || fallbackExtractOutputText);
+    
     const reply = getText(result).trim() || "Không nhận được phản hồi từ GPT.";
 
-    // Tách các câu hỏi gợi ý follow-up (nếu có)
-    const followupQuestions = reply
-      .split(/\r?\n/)
-      .map(line => line.trim())
-      .filter(line => line.startsWith("▫") || line.startsWith("❓"))
-      .map(line => ({
-        question: line.replace(/^([▫❓])\s*/, "").trim()
-      }));
-
+    // Tách phần thân & câu hỏi follow-up (robust cho nhiều định dạng)
+    const { body: analysisText, questions } = parseFollowupQuestionsAndBody(reply);
+    
+    // Render input cho câu hỏi
     if (typeof renderExtraQuestions === "function") {
-      renderExtraQuestions(followupQuestions);
+      renderExtraQuestions(questions);
     }
-    localStorage.setItem("extraFollowupQuestions", JSON.stringify(followupQuestions));
-
+    localStorage.setItem("extraFollowupQuestions", JSON.stringify(questions));
+    
+    // Chỉ đổ phần phân tích (đã loại câu hỏi) vào textarea
     const outputBox = document.getElementById("syndrome-model");
     if (outputBox) {
-      outputBox.value = reply;
+      outputBox.value = analysisText || reply; // fallback nếu không tách được
     } else {
       alert("❌ Không tìm thấy ô hiển thị kết quả (syndrome-model).");
     }
@@ -302,6 +298,54 @@ function fallbackExtractOutputText(resp) {
     if (parts.length) return parts.join("\n");
   }
   return resp?.choices?.[0]?.message?.content || resp?.choices?.[0]?.text || "";
+}
+
+// Tách phần thân (analysis) và danh sách câu hỏi follow-up
+function parseFollowupQuestionsAndBody(text) {
+  const lines = String(text).split(/\r?\n/);
+  const questions = [];
+  const bodyLines = [];
+
+  // Các mẫu nhận diện câu hỏi
+  const patterns = [
+    // Bullet thường gặp: -, –, —, *, •, ▫, ❓ + nội dung kết thúc ?/？
+    /^\s*[▫•\-–—\*]\s*(.+?[？?])\s*$/,
+    // Dòng bắt đầu với biểu tượng/cụm từ hỏi
+    /^\s*(?:❓|Q[:：]?|Question[:：]?|Câu hỏi[:：]?|Hỏi[:：]?|问[:：]?)\s*(.+?)\s*$/,
+    // Đánh số: 1. / 1) + câu hỏi kết thúc ?/？
+    /^\s*\d+\s*(?:[.)-])\s*(.+?[？?])\s*$/
+  ];
+
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) { bodyLines.push(raw); continue; }
+
+    let matched = false;
+    for (const re of patterns) {
+      const m = line.match(re);
+      if (m) {
+        const q = (m[1] || "").trim()
+          .replace(/^[\s\-\*•▫❓]+/, "") // bỏ kí hiệu đầu dòng
+          .replace(/^\s*(Q|Question|Câu hỏi|Hỏi|问)[:：]?\s*/i, "")
+          .trim();
+        if (q) questions.push({ question: q });
+        matched = true;
+        break;
+      }
+    }
+
+    // Nếu chưa match theo mẫu trên mà kết thúc bằng ?/？ → coi là câu hỏi
+    if (!matched && /[？?]\s*$/.test(line)) {
+      questions.push({ question: line.replace(/^[\s\-\*•▫❓]+/, "").trim() });
+      matched = true;
+    }
+
+    // Dòng không phải câu hỏi → giữ lại thân bài
+    if (!matched) bodyLines.push(raw);
+  }
+
+  const body = bodyLines.join("\n").trim();
+  return { body, questions };
 }
 
 // Render các câu hỏi followup
